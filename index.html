@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Game Center Master</title>
+    <title>Jigsaw, Tetris & TTS SD</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="manifest" href="manifest.json">
@@ -14,7 +14,7 @@
     <!-- Layar Login -->
     <div id="login-screen" class="screen active">
         <div class="glass-card zoom-in">
-            <h1>🎮 Game Center</h1>
+            <h1>🎮 Game Center SD</h1>
             <p>Silakan pilih nama untuk mulai bermain</p>
             
             <div class="dropdown-wrapper">
@@ -44,7 +44,7 @@
                 <div class="mode-buttons grid-3">
                     <button id="btn-mode-jigsaw" class="btn-mode active">🧩 Jigsaw</button>
                     <button id="btn-mode-tetris" class="btn-mode">🧱 Tetris</button>
-                    <button id="btn-mode-snake" class="btn-mode">🐍 Snake</button>
+                    <button id="btn-mode-tts" class="btn-mode">📝 Soal Harian</button>
                 </div>
             </div>
 
@@ -82,15 +82,20 @@
             <div id="tetris-config-panel" class="game-config-panel" style="display: none;">
                 <div class="settings-group">
                     <h3>🧱 Tetris Klasik</h3>
-                    <p class="help-text">Susun balok yang jatuh agar membentuk garis penuh. Gunakan tombol navigasi di layar untuk mengontrol!</p>
+                    <p class="help-text">Susun balok yang jatuh agar membentuk garis penuh menggunakan kontrol di layar!</p>
                 </div>
             </div>
 
-            <!-- Panel Snake Config -->
-            <div id="snake-config-panel" class="game-config-panel" style="display: none;">
+            <!-- Panel TTS Config -->
+            <div id="tts-config-panel" class="game-config-panel" style="display: none;">
                 <div class="settings-group">
-                    <h3>🐍 Snake Game</h3>
-                    <p class="help-text">Makan buah sebanyak-banyaknya untuk memperpanjang ular tanpa menabrak dinding atau tubuh sendiri!</p>
+                    <h3>📝 Soal-soal Harian SD</h3>
+                    <p class="help-text">Pilih jumlah soal untuk sesi ini:</p>
+                    <div class="difficulty-buttons" id="tts-count-buttons">
+                        <button class="btn-tts-count active" data-count="10">10 Soal</button>
+                        <button class="btn-tts-count" data-count="20">20 Soal</button>
+                        <button class="btn-tts-count" data-count="30">30 Soal</button>
+                    </div>
                 </div>
             </div>
 
@@ -108,7 +113,7 @@
         </div>
     </div>
 
-    <!-- Layar Jigsaw Game -->
+    <!-- Layar Jigsaw Game (Fullscreen Mepet Pinggir) -->
     <div id="game-screen" class="screen">
         <div class="game-header">
             <button id="btn-back" class="btn-secondary">🔙 Menu</button>
@@ -116,8 +121,8 @@
             <div class="level-display">Level: <span id="current-level-text">Mudah</span></div>
         </div>
 
-        <div class="game-container">
-            <p class="help-text" style="text-align:center; color:#38bdf8;">Ketuk potongan di bawah, lalu ketuk kotak kosong di papan!</p>
+        <div class="game-container-fullscreen">
+            <p class="help-text" style="text-align:center; color:#38bdf8; margin: 2px 0;">Ketuk potongan di bawah, lalu ketuk kotak kosong!</p>
             <div id="puzzle-board"></div>
             <div id="puzzle-pieces"></div>
         </div>
@@ -144,25 +149,19 @@
         </div>
     </div>
 
-    <!-- Layar Snake Game -->
-    <div id="snake-game-screen" class="screen">
+    <!-- Layar TTS Game -->
+    <div id="tts-game-screen" class="screen">
         <div class="game-header">
-            <button id="btn-snake-back" class="btn-secondary">🔙 Menu</button>
-            <div class="timer-display">Skor: <span id="snake-score">0</span></div>
+            <button id="btn-tts-stop" class="btn-danger">⏹️ Stop & Nilai</button>
+            <div class="timer-display">Pemain: <span id="tts-user-label" style="color:#f472b6;">-</span> | Skor: <span id="tts-score">0</span></div>
         </div>
-        <div class="arcade-container">
-            <canvas id="snake-canvas" width="300" height="300"></canvas>
-            <div class="arcade-controls snake-pad">
-                <div class="control-row">
-                    <button id="snake-up" class="btn-ctrl">⬆️ Atas</button>
-                </div>
-                <div class="control-row">
-                    <button id="snake-left" class="btn-ctrl">⬅️ Kiri</button>
-                    <button id="snake-right" class="btn-ctrl">➡️ Kanan</button>
-                </div>
-                <div class="control-row">
-                    <button id="snake-down" class="btn-ctrl">⬇️ Bawah</button>
-                </div>
+        <div class="arcade-container" style="width: 100%; max-width: 420px; padding: 0 5px;">
+            <div id="tts-container" style="display:flex; flex-wrap:wrap; justify-content:center; gap:4px; margin: 10px auto; max-width:100%;"></div>
+            <div class="settings-group" style="width:100%; margin-top:10px;">
+                <h4 id="tts-question" style="font-size:14px; color:#38bdf8; margin-bottom:8px;">Pertanyaan: ...</h4>
+                <input type="text" id="tts-answer-input" placeholder="Ketik jawaban di sini..." style="padding:10px; font-size:15px; margin-bottom:10px; width:100%;">
+                <button id="btn-tts-submit" class="btn-primary" style="margin-top:0;">Periksa Jawaban</button>
+                <p id="tts-feedback" style="font-size:13px; margin-top:6px; text-align:center; height:18px;"></p>
             </div>
         </div>
     </div>
@@ -174,6 +173,16 @@
             <p>Berhasil diselesaikan dalam waktu <strong id="win-time"></strong></p>
             <p id="new-record-msg" class="highlight-text" style="display: none;">🌟 Rekor Baru! 🌟</p>
             <button id="btn-play-again" class="btn-primary">Main Lagi</button>
+        </div>
+    </div>
+
+    <!-- Modal Selesai Tes Soal Harian -->
+    <div id="tts-result-modal" class="modal">
+        <div class="modal-content pop-out">
+            <h2>Hasil Tes Soal Harian 📝</h2>
+            <p id="tts-congrats-msg" class="highlight-text">Selamat telah menyelesaikan tes ini!</p>
+            <p>Total Skor Akhir: <strong id="tts-final-score" style="font-size: 20px; color: #38bdf8;">0</strong> Poin</p>
+            <button id="btn-tts-close-modal" class="btn-primary" style="margin-top: 15px;">Kembali ke Menu</button>
         </div>
     </div>
 
