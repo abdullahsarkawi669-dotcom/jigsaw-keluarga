@@ -6,6 +6,7 @@ let gridSize = 3;
 let timerInterval = null;
 let seconds = 0;
 let currentGameMode = 'jigsaw';
+let selectedQuestionCount = 10;
 
 // Elemen DOM
 const screens = {
@@ -13,7 +14,7 @@ const screens = {
     dashboard: document.getElementById('dashboard-screen'),
     game: document.getElementById('game-screen'),
     tetrisGame: document.getElementById('tetris-game-screen'),
-    snakeGame: document.getElementById('snake-game-screen')
+    ttsGame: document.getElementById('tts-game-screen')
 };
 
 const usernameInput = document.getElementById('username');
@@ -24,15 +25,17 @@ const btnLogout = document.getElementById('btn-logout');
 
 const btnModeJigsaw = document.getElementById('btn-mode-jigsaw');
 const btnModeTetris = document.getElementById('btn-mode-tetris');
-const btnModeSnake = document.getElementById('btn-mode-snake');
+const btnModeTTS = document.getElementById('btn-mode-tts');
 
 const jigsawConfigPanel = document.getElementById('jigsaw-config-panel');
 const tetrisConfigPanel = document.getElementById('tetris-config-panel');
-const snakeConfigPanel = document.getElementById('snake-config-panel');
+const ttsConfigPanel = document.getElementById('tts-config-panel');
 
 const imageSelect = document.getElementById('image-select');
 const imagePreview = document.getElementById('image-preview');
 const btnDiffs = document.querySelectorAll('.btn-diff');
+const btnTtsCounts = document.querySelectorAll('.btn-tts-count');
+
 const puzzleBoard = document.getElementById('puzzle-board');
 const puzzlePieces = document.getElementById('puzzle-pieces');
 const timerDisplay = document.getElementById('timer');
@@ -41,7 +44,7 @@ const currentLevelText = document.getElementById('current-level-text');
 const btnStart = document.getElementById('btn-start');
 const btnBack = document.getElementById('btn-back');
 const btnTetrisBack = document.getElementById('btn-tetris-back');
-const btnSnakeBack = document.getElementById('btn-snake-back');
+const btnTTSStop = document.getElementById('btn-tts-stop');
 
 const scoreList = document.getElementById('score-list');
 const btnResetScore = document.getElementById('btn-reset-score');
@@ -51,6 +54,12 @@ const winModal = document.getElementById('win-modal');
 const winTimeDisplay = document.getElementById('win-time');
 const newRecordMsg = document.getElementById('new-record-msg');
 const btnPlayAgain = document.getElementById('btn-play-again');
+
+// TTS Result Modal
+const ttsResultModal = document.getElementById('tts-result-modal');
+const ttsFinalScore = document.getElementById('tts-final-score');
+const ttsCongratsMsg = document.getElementById('tts-congrats-msg');
+const btnTtsCloseModal = document.getElementById('btn-tts-close-modal');
 
 // Inisialisasi Awal
 window.onload = () => {
@@ -96,11 +105,11 @@ function setActiveMode(mode) {
     currentGameMode = mode;
     btnModeJigsaw.classList.remove('active');
     btnModeTetris.classList.remove('active');
-    btnModeSnake.classList.remove('active');
+    btnModeTTS.classList.remove('active');
     
     jigsawConfigPanel.style.display = 'none';
     tetrisConfigPanel.style.display = 'none';
-    snakeConfigPanel.style.display = 'none';
+    ttsConfigPanel.style.display = 'none';
 
     if (mode === 'jigsaw') {
         btnModeJigsaw.classList.add('active');
@@ -108,16 +117,16 @@ function setActiveMode(mode) {
     } else if (mode === 'tetris') {
         btnModeTetris.classList.add('active');
         tetrisConfigPanel.style.display = 'block';
-    } else if (mode === 'snake') {
-        btnModeSnake.classList.add('active');
-        snakeConfigPanel.style.display = 'block';
+    } else if (mode === 'tts') {
+        btnModeTTS.classList.add('active');
+        ttsConfigPanel.style.display = 'block';
     }
     loadScores();
 }
 
 btnModeJigsaw.addEventListener('click', () => setActiveMode('jigsaw'));
 btnModeTetris.addEventListener('click', () => setActiveMode('tetris'));
-btnModeSnake.addEventListener('click', () => setActiveMode('snake'));
+btnModeTTS.addEventListener('click', () => setActiveMode('tts'));
 
 function updateDashboard() {
     displayName.textContent = currentUser.charAt(0).toUpperCase() + currentUser.slice(1);
@@ -138,6 +147,14 @@ btnDiffs.forEach(btn => {
     });
 });
 
+btnTtsCounts.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        btnTtsCounts.forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        selectedQuestionCount = parseInt(e.target.getAttribute('data-count'));
+    });
+});
+
 btnStart.addEventListener('click', () => {
     if (currentGameMode === 'jigsaw') {
         showScreen('game');
@@ -145,28 +162,27 @@ btnStart.addEventListener('click', () => {
     } else if (currentGameMode === 'tetris') {
         showScreen('tetrisGame');
         initTetrisGame();
-    } else if (currentGameMode === 'snake') {
-        showScreen('snakeGame');
-        initSnakeGame();
+    } else if (currentGameMode === 'tts') {
+        showScreen('ttsGame');
+        initTTSGame();
     }
 });
 
 btnBack.addEventListener('click', () => { stopTimer(); showScreen('dashboard'); });
 btnTetrisBack.addEventListener('click', () => { stopTetris(); showScreen('dashboard'); });
-btnSnakeBack.addEventListener('click', () => { stopSnake(); showScreen('dashboard'); });
 
 // --- Rekor Skor LocalStorage ---
 function getScores() {
     let key = 'jigsaw_scores_' + gridSize;
     if (currentGameMode === 'tetris') key = 'tetris_scores';
-    if (currentGameMode === 'snake') key = 'snake_scores';
+    if (currentGameMode === 'tts') key = 'tts_scores_' + selectedQuestionCount;
     return JSON.parse(localStorage.getItem(key)) || [];
 }
 
 function saveScore(val) {
     let key = 'jigsaw_scores_' + gridSize;
     if (currentGameMode === 'tetris') key = 'tetris_scores';
-    if (currentGameMode === 'snake') key = 'snake_scores';
+    if (currentGameMode === 'tts') key = 'tts_scores_' + selectedQuestionCount;
     
     let scores = JSON.parse(localStorage.getItem(key)) || [];
     scores.push({ user: currentUser, score: val, date: new Date().toLocaleDateString() });
@@ -199,13 +215,13 @@ btnResetScore.addEventListener('click', () => {
     if(confirm('Reset semua rekor untuk mode ini?')) {
         let key = 'jigsaw_scores_' + gridSize;
         if (currentGameMode === 'tetris') key = 'tetris_scores';
-        if (currentGameMode === 'snake') key = 'snake_scores';
+        if (currentGameMode === 'tts') key = 'tts_scores_' + selectedQuestionCount;
         localStorage.removeItem(key);
         loadScores();
     }
 });
 
-// --- Jigsaw Game Engine ---
+// --- Jigsaw Game Engine (Fullscreen Mepet Pinggir) ---
 let selectedPiece = null;
 function initJigsawGame() {
     puzzleBoard.innerHTML = '';
@@ -216,7 +232,7 @@ function initJigsawGame() {
     puzzleBoard.style.gridTemplateRows = `repeat(${gridSize}, 1fr)`;
     
     let piecesArray = [];
-    const boardSizePx = 300;
+    const boardSizePx = Math.min(window.innerWidth * 0.96, 420);
     const pieceSize = boardSizePx / gridSize;
 
     for (let row = 0; row < gridSize; row++) {
@@ -308,13 +324,8 @@ function initTetrisGame() {
     scoreEl.textContent = score;
 
     const SHAPES = [
-        [[1,1,1,1]], // I
-        [[1,1],[1,1]], // O
-        [[0,1,0],[1,1,1]], // T
-        [[1,0,0],[1,1,1]], // L
-        [[0,0,1],[1,1,1]], // J
-        [[0,1,1],[1,1,0]], // S
-        [[1,1,0],[0,1,1]]  // Z
+        [[1,1,1,1]], [[1,1],[1,1]], [[0,1,0],[1,1,1]],
+        [[1,0,0],[1,1,1]], [[0,0,1],[1,1,1]], [[0,1,1],[1,1,0]], [[1,1,0],[0,1,1]]
     ];
     const COLORS = ['', '#38bdf8', '#facc15', '#c084fc', '#fb923c', '#60a5fa', '#4ade80', '#f87171'];
 
@@ -325,10 +336,8 @@ function initTetrisGame() {
     };
 
     function draw() {
-        ctx.fillStyle = '#0f172a';
+        ctx.fillStyle = '#060913';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        // Gambar Papan
         for (let r = 0; r < ROWS; r++) {
             for (let c = 0; c < COLS; c++) {
                 if (board[r][c]) {
@@ -337,7 +346,6 @@ function initTetrisGame() {
                 }
             }
         }
-        // Gambar Blok Aktif
         currentPiece.shape.forEach((row, r) => {
             row.forEach((val, c) => {
                 if (val) {
@@ -427,74 +435,218 @@ function initTetrisGame() {
 
 function stopTetris() { clearInterval(tetrisInterval); }
 
-// --- Snake Game Engine ---
-let snakeInterval = null;
-function initSnakeGame() {
-    const canvas = document.getElementById('snake-canvas');
-    const ctx = canvas.getContext('2d');
-    const scoreEl = document.getElementById('snake-score');
+// --- Teka-Teki Silang (TTS) / Soal Harian Engine ---
+const ttsQuestionsDatabase = [
+    { q: "Siapa yang masih pakai popok? ...", answer: "IBROHIM" },
+    { q: "Apa warna kucing di rumah...", answer: "OREN" },
+    { q: "Binatang apa yang hidup di kolam...", answer: "LELE" },
+    { q: "Apa nama makanan kucing...", answer: "EXCEL" },
+    { q: "Apa warna mobil...", answer: "HIJAU" },
+    { q: "Siapa nama ayahmu...", answer: "AGUS" },
+    { q: "Siapa nama ibumu...", answer: "RIA" },
+    { q: "Siapa yang biasanya memasak di rumah...", answer: "UMI" },
+    { q: "Siapa yang biasanya pergi bekerja...", answer: "ABI" },
+    { q: "Apa warna langit saat cerah...", answer: "BIRU" },
+    { q: "Apa warna rumput...", answer: "HIJAU" },
+    { q: "Apa warna susu...", answer: "PUTIH" },
+    { q: "Apa warna pisang matang...", answer: "KUNING" },
+    { q: "Apa warna tomat matang...", answer: "MERAH" },
+    { q: "Apa warna jeruk...", answer: "ORANYE" },
+    { q: "Binatang apa yang suka mengeong...", answer: "KUCING" },
+    { q: "Binatang apa yang suka menggonggong...", answer: "ANJING" },
+    { q: "Binatang apa yang bisa terbang...", answer: "BURUNG" },
+    { q: "Binatang apa yang hidup di air...", answer: "IKAN" },
+    { q: "Binatang apa yang menghasilkan telur...", answer: "AYAM" },
+    { q: "Binatang apa yang menghasilkan susu...", answer: "SAPI" },
+    { q: "Binatang apa yang suka makan wortel...", answer: "KELINCI" },
+    { q: "Binatang apa yang memiliki belalai...", answer: "GAJAH" },
+    { q: "Binatang apa yang memiliki leher panjang...", answer: "JERAPAH" },
+    { q: "Binatang apa yang disebut raja hutan...", answer: "SINGA" },
+    { q: "Apa makanan pokok orang Indonesia...", answer: "NASI" },
+    { q: "Apa makanan dari tepung berbentuk bulat panjang...", answer: "ROTI" },
+    { q: "Apa minuman yang berasal dari sapi...", answer: "SUSU" },
+    { q: "Apa minuman paling sering saat haus...", answer: "AIR" },
+    { q: "Buah kuning dan panjang...", answer: "PISANG" },
+    { q: "Alat untuk menulis di buku...", answer: "PENSIL" },
+    { q: "Alat untuk menghapus tulisan pensil...", answer: "PENGHAPUS" },
+    { q: "Alat untuk mengukur panjang...", answer: "PENGGARIS" },
+    { q: "Tempat menyimpan buku di sekolah...", answer: "TAS" },
+    { q: "Siapa yang mengajar di sekolah...", answer: "GURU" },
+    { q: "Alat untuk melihat waktu...", answer: "JAM" },
+    { q: "Alat untuk menelepon...", answer: "HP" },
+    { q: "Alat untuk mengambil foto...", answer: "KAMERA" },
+    { q: "Benda yang menghasilkan cahaya malam...", answer: "LAMPU" },
+    { q: "Benda untuk membuka pintu...", answer: "KUNCI" },
+    { q: "Alat untuk menyapu lantai...", answer: "SAPU" },
+    { q: "Alat untuk mengepel lantai...", answer: "PEL" },
+    { q: "Alat untuk makan nasi...", answer: "SENDOK" },
+    { q: "Alat untuk memotong makanan...", answer: "PISAU" },
+    { q: "Tempat untuk minum air...", answer: "GELAS" },
+    { q: "Tempat memasak nasi...", answer: "PENANAK NASI" },
+    { q: "Alat untuk memasak air...", answer: "KETEL" },
+    { q: "Penyimpanan makanan agar dingin...", answer: "KULKAS" },
+    { q: "Sabun untuk mencuci...", answer: "SABUN" },
+    { q: "Alat membersihkan gigi...", answer: "SIKAT GIGI" },
+    { q: "Pasta pembersih gigi...", answer: "PASTA GIGI" },
+    { q: "Yang dipakai di kepala...", answer: "TOPI" },
+    { q: "Yang dipakai di kaki...", answer: "SEPATU" },
+    { q: "Yang dipakai saat hujan...", answer: "PAYUNG" },
+    { q: "Pakaian untuk tidur...", answer: "PIYAMA" },
+    { q: "Pakaian penghangat tubuh...", answer: "JAKET" },
+    { q: "Kendaraan roda dua...", answer: "SEPEDA" },
+    { q: "Kendaraan roda empat...", answer: "MOBIL" },
+    { q: "Kendaraan di atas rel...", answer: "KERETA" },
+    { q: "Kendaraan terbang di udara...", answer: "PESAWAT" },
+    { q: "Kendaraan berjalan di laut...", answer: "KAPAL" },
+    { q: "Lampu lalu lintas berhenti...", answer: "MERAH" },
+    { q: "Lampu lalu lintas berjalan...", answer: "HIJAU" },
+    { q: "Lampu lalu lintas bersiap...", answer: "KUNING" },
+    { q: "Pelindung kepala pengendara...", answer: "HELM" },
+    { q: "Tempat isi bensin...", answer: "SPBU" },
+    { q: "Muncul pada siang hari...", answer: "MATAHARI" },
+    { q: "Muncul di langit malam...", answer: "BULAN" },
+    { q: "Berkelap-kelip malam hari...", answer: "BINTANG" },
+    { q: "Turun dari langit saat hujan...", answer: "AIR" },
+    { q: "Jumlah jari tangan kanan...", answer: "LIMA" },
+    { q: "Jumlah kaki manusia...", answer: "DUA" },
+    { q: "Jumlah mata manusia...", answer: "DUA" },
+    { q: "Alat untuk melihat...", answer: "MATA" },
+    { q: "Alat untuk mendengar...", answer: "TELINGA" },
+    { q: "Alat untuk mencium bau...", answer: "HIDUNG" },
+    { q: "Alat untuk mengecap rasa...", answer: "LIDAH" },
+    { q: "Alat untuk berjalan...", answer: "KAKI" },
+    { q: "Alat untuk memegang...", answer: "TANGAN" },
+    { q: "Tempat tidur di kamar...", answer: "TEMPAT TIDUR" },
+    { q: "Alas kepala saat tidur...", answer: "BANTAL" },
+    { q: "Penutup tubuh saat tidur...", answer: "SELIMUT" },
+    { q: "Ruangan untuk memasak...", answer: "DAPUR" },
+    { q: "Ruangan untuk tidur...", answer: "KAMAR" },
+    { q: "Ruangan menerima tamu...", answer: "RUANG TAMU" },
+    { q: "Tempat untuk mandi...", answer: "KAMAR MANDI" }
+];
+
+let activeTTSQuestions = [];
+let currentTTSIndex = 0;
+let ttsScore = 0;
+
+function initTTSGame() {
+    currentTTSIndex = 0;
+    ttsScore = 0;
+    document.getElementById('tts-score').textContent = ttsScore;
+    document.getElementById('tts-user-label').textContent = currentUser.toUpperCase();
     
-    const gridSize = 15;
-    const tileCount = 20;
-    let snake = [{ x: 10, y: 10 }];
-    let food = { x: 5, y: 5 };
-    let dx = 1, dy = 0;
-    let score = 0;
-    scoreEl.textContent = score;
-
-    function gameLoop() {
-        // Gerak ular
-        const head = { x: snake[0].x + dx, y: snake[0].y + dy };
-        
-        // Tabrak dinding
-        if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount || 
-            snake.some(part => part.x === head.x && part.y === head.y)) {
-            alert('Game Over! Skor Snake: ' + score);
-            snake = [{ x: 10, y: 10 }];
-            score = 0;
-            scoreEl.textContent = score;
-            dx = 1; dy = 0;
-        }
-
-        snake.unshift(head);
-
-        // Makan buah
-        if (head.x === food.x && head.y === food.y) {
-            score += 10;
-            scoreEl.textContent = score;
-            saveScore(score);
-            food = { x: Math.floor(Math.random() * tileCount), y: Math.floor(Math.random() * tileCount) };
-        } else {
-            snake.pop();
-        }
-
-        // Render Canvas
-        ctx.fillStyle = '#0f172a';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        // Gambar Makanan (Buah Merah)
-        ctx.fillStyle = '#ef4444';
-        ctx.fillRect(food.x * gridSize, food.y * gridSize, gridSize - 2, gridSize - 2);
-
-        // Gambar Ular (Warna-warni Hijau)
-        snake.forEach((part, index) => {
-            ctx.fillStyle = index === 0 ? '#4ade80' : '#22c55e';
-            ctx.fillRect(part.x * gridSize, part.y * gridSize, gridSize - 2, gridSize - 2);
-        });
-    }
-
-    document.getElementById('snake-up').onclick = () => { if (dy === 0) { dx = 0; dy = -1; } };
-    document.getElementById('snake-down').onclick = () => { if (dy === 0) { dx = 0; dy = 1; } };
-    document.getElementById('snake-left').onclick = () => { if (dx === 0) { dx = -1; dy = 0; } };
-    document.getElementById('snake-right').onclick = () => { if (dx === 0) { dx = 1; dy = 0; } };
-
-    if (snakeInterval) clearInterval(snakeInterval);
-    snakeInterval = setInterval(gameLoop, 130);
+    let shuffled = [...ttsQuestionsDatabase].sort(() => 0.5 - Math.random());
+    activeTTSQuestions = shuffled.slice(0, selectedQuestionCount);
+    
+    loadTTSQuestion();
 }
 
-function stopSnake() { clearInterval(snakeInterval); }
+function loadTTSQuestion() {
+    if (currentTTSIndex >= activeTTSQuestions.length) {
+        finishTTSGame();
+        return;
+    }
 
-// --- Timer Jigsaw ---
+    const currentData = activeTTSQuestions[currentTTSIndex];
+    document.getElementById('tts-question').textContent = `Soal ${currentTTSIndex + 1} dari ${activeTTSQuestions.length}: ${currentData.q}`;
+    const inputField = document.getElementById('tts-answer-input');
+    inputField.value = '';
+    document.getElementById('tts-feedback').textContent = '';
+
+    renderTTSBoxes('');
+    inputField.oninput = (e) => {
+        renderTTSBoxes(e.target.value);
+    };
+}
+
+function renderTTSBoxes(typedText) {
+    const container = document.getElementById('tts-container');
+    container.innerHTML = '';
+    
+    const currentData = activeTTSQuestions[currentTTSIndex];
+    const words = currentData.answer.split(' ');
+    const cleanTyped = typedText.trim().toUpperCase().replace(/\s+/g, '');
+    
+    let charIdx = 0;
+    words.forEach((word, wordIdx) => {
+        for (let i = 0; i < word.length; i++) {
+            const cell = document.createElement('div');
+            cell.classList.add('tts-cell');
+            if (charIdx < cleanTyped.length) {
+                cell.textContent = cleanTyped[charIdx];
+                cell.classList.add('filled');
+            } else {
+                cell.textContent = '?';
+            }
+            container.appendChild(cell);
+            charIdx++;
+        }
+        if (wordIdx < words.length - 1) {
+            const spaceDiv = document.createElement('div');
+            spaceDiv.classList.add('tts-space');
+            container.appendChild(spaceDiv);
+        }
+    });
+}
+
+document.getElementById('btn-tts-submit').onclick = () => {
+    const userAns = document.getElementById('tts-answer-input').value.trim().toUpperCase();
+    const currentData = activeTTSQuestions[currentTTSIndex];
+    const cleanAns = currentData.answer.replace(/\s+/g, '');
+    const userAnsClean = userAns.replace(/\s+/g, '');
+    const feedback = document.getElementById('tts-feedback');
+
+    if (userAnsClean === cleanAns) {
+        feedback.style.color = '#34d399';
+        feedback.textContent = 'Benar! Hebat sekali!';
+        ttsScore += Math.floor(100 / activeTTSQuestions.length);
+        document.getElementById('tts-score').textContent = ttsScore;
+
+        const cells = document.querySelectorAll('.tts-cell');
+        let idx = 0;
+        cells.forEach((cell) => {
+            cell.textContent = cleanAns[idx];
+            cell.classList.add('filled');
+            idx++;
+        });
+
+        currentTTSIndex++;
+        setTimeout(loadTTSQuestion, 1200);
+    } else {
+        feedback.style.color = '#f87171';
+        feedback.textContent = 'Kurang tepat, coba lagi ya!';
+        
+        // Animasi merah menyala pada sel
+        const cells = document.querySelectorAll('.tts-cell');
+        cells.forEach(cell => {
+            cell.classList.add('shake-error');
+            setTimeout(() => cell.classList.remove('shake-error'), 400);
+        });
+    }
+};
+
+// Tombol Stop Tes Harian
+document.getElementById('btn-tts-stop').onclick = () => {
+    if (confirm('Yakin ingin berhenti dan langsung melihat skor saat ini?')) {
+        finishTTSGame();
+    }
+};
+
+function finishTTSGame() {
+    saveScore(ttsScore);
+    const capitalizedUser = currentUser.charAt(0).toUpperCase() + currentUser.slice(1);
+    ttsCongratsMsg.textContent = `Selamat ${capitalizedUser} telah menyelesaikan tes ini!`;
+    ttsFinalScore.textContent = ttsScore;
+    ttsResultModal.classList.add('active');
+}
+
+btnTtsCloseModal.onclick = () => {
+    ttsResultModal.classList.remove('active');
+    showScreen('dashboard');
+    loadScores();
+};
+
+// --- Timer Jigsaw & Modal ---
 function formatTime(sec) {
     const m = Math.floor(sec / 60).toString().padStart(2, '0');
     const s = (sec % 60).toString().padStart(2, '0');
