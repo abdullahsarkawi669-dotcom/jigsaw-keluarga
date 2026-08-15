@@ -21,7 +21,7 @@ body {
     align-items: center;
     justify-content: center;
     flex-direction: column;
-    padding: 10px;
+    padding: 5px;
 }
 .screen.active {
     display: flex;
@@ -168,7 +168,7 @@ button {
     display: flex;
     gap: 6px;
 }
-.btn-diff {
+.btn-diff, .btn-tts-count {
     flex: 1;
     background: rgba(255, 255, 255, 0.1);
     color: white;
@@ -176,7 +176,7 @@ button {
     font-size: 12px;
     padding: 8px;
 }
-.btn-diff.active {
+.btn-diff.active, .btn-tts-count.active {
     background: #10b981;
     border-color: #34d399;
 }
@@ -210,35 +210,38 @@ button {
     border-bottom: 1px dashed rgba(255,255,255,0.1);
 }
 
-/* Game Area Jigsaw */
+/* Game Area Jigsaw Fullscreen Mepet Pinggir */
 .game-header {
     width: 100%;
-    max-width: 320px;
+    max-width: 100%;
     display: flex;
     justify-content: space-between;
     align-items: center;
     background: rgba(0,0,0,0.3);
-    padding: 10px 15px;
-    border-radius: 10px;
-    margin-bottom: 10px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin-bottom: 5px;
 }
 .timer-display {
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 700;
     color: #38bdf8;
 }
 
-.game-container {
+.game-container-fullscreen {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    width: 100%;
+    gap: 8px;
+    width: 100vw;
     align-items: center;
+    padding: 0 4px;
 }
 
 #puzzle-board {
-    width: 300px;
-    height: 300px;
+    width: 96vw;
+    height: 96vw;
+    max-width: 420px;
+    max-height: 420px;
     background: rgba(0,0,0,0.6);
     border: 2px solid rgba(255,255,255,0.3);
     display: grid;
@@ -256,8 +259,9 @@ button {
 }
 
 #puzzle-pieces {
-    width: 300px;
-    min-height: 110px;
+    width: 98vw;
+    min-height: 120px;
+    max-width: 450px;
     background: rgba(255,255,255,0.08);
     border: 2px dashed rgba(255,255,255,0.3);
     border-radius: 8px;
@@ -265,8 +269,8 @@ button {
     flex-wrap: wrap;
     align-content: center;
     justify-content: center;
-    padding: 8px;
-    gap: 6px;
+    padding: 6px;
+    gap: 5px;
 }
 
 .puzzle-piece {
@@ -285,47 +289,84 @@ button {
     cursor: default;
 }
 
-/* Arcade Container (Tetris & Snake) */
+/* Arcade Container */
 .arcade-container {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 15px;
+    gap: 12px;
 }
 
 canvas {
-    background: #0f172a;
+    background: #060913;
     border: 3px solid rgba(255, 255, 255, 0.3);
-    border-radius: 8px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+    border-radius: 10px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.6);
 }
 
 .arcade-controls {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    width: 260px;
+    width: 300px;
 }
 
 .control-row {
     display: flex;
     justify-content: center;
-    gap: 10px;
+    gap: 8px;
 }
 
 .btn-ctrl {
     background: rgba(255, 255, 255, 0.2);
     color: white;
     border: 1px solid rgba(255,255,255,0.3);
-    padding: 10px 16px;
+    padding: 10px 14px;
     border-radius: 8px;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     flex: 1;
 }
 .btn-ctrl:active {
     background: #3b82f6;
     transform: scale(0.95);
+}
+
+/* TTS Cell Style - Satu Baris dengan Pemisah Suku Kata */
+.tts-cell {
+    width: 28px;
+    height: 32px;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+    color: #fff;
+    border-radius: 4px;
+    transition: background 0.3s;
+}
+.tts-cell.filled {
+    background: #3b82f6;
+}
+.tts-space {
+    width: 12px;
+    height: 32px;
+    display: inline-block;
+}
+
+/* Animasi Salah Menyala Merah */
+@keyframes shakeRed {
+    0% { transform: translateX(0); background-color: #ef4444; }
+    20% { transform: translateX(-4px); background-color: #ef4444; }
+    40% { transform: translateX(4px); background-color: #ef4444; }
+    60% { transform: translateX(-4px); background-color: #ef4444; }
+    80% { transform: translateX(4px); background-color: #ef4444; }
+    100% { transform: translateX(0); background-color: rgba(255,255,255,0.15); }
+}
+.shake-error {
+    animation: shakeRed 0.4s ease-in-out;
 }
 
 /* Modal */
