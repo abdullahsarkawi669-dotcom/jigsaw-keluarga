@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jigsaw Puzzle Master</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+	<link rel="manifest" href="manifest.json">
+	<meta name="theme-color" content="#2563eb">
+</head>
+<body>
+
+    <!-- Layar Login -->
+    <div id="login-screen" class="screen active">
+        <div class="glass-card zoom-in">
+            <h1>Jigsaw Puzzle</h1>
+            <p>Silakan pilih nama untuk bermain</p>
+            
+            <!-- Menggunakan Dropdown untuk Login -->
+            <div class="dropdown-wrapper">
+                <select id="username" class="floating-dropdown">
+                    <option value="aisyah">Aisyah</option>
+                    <option value="fathimah">Fathimah</option>
+                    <option value="muhammad">Muhammad</option>
+                    <option value="maryam">Maryam</option>
+                    <option value="ibrahim">Ibrahim</option>
+                </select>
+                <div class="dropdown-arrow">&#9662;</div>
+            </div>
+
+            <button id="btn-login" class="btn-primary">Masuk</button>
+            <p id="login-error" class="error-msg"></p>
+        </div>
+    </div>
+
+    <!-- Layar Dashboard -->
+    <div id="dashboard-screen" class="screen">
+        <div class="glass-card slide-up" style="max-width: 600px; width: 90%;">
+            <h2>Selamat Datang, <span id="display-name"></span>!</h2>
+            
+            <div class="settings-group">
+                <h3>1. Pilih Gambar Puzzle</h3>
+                <p class="help-text">Pilih gambar dari daftar di bawah ini.</p>
+                
+                <!-- Dropdown Mengambang (Floating Dropdown) -->
+                <div class="dropdown-wrapper">
+                    <select id="image-select" class="floating-dropdown">
+                        <option value="gambar(1).png">Profesor Aisyah di Hutan</option>
+                        <option value="gambar(2).png">Muhammad & Dinosaurus</option>
+                        <option value="gambar(3).png">Aisyah Bermain di Hutan</option>
+                        <option value="gambar(4).png">Aisyah di Peternakan</option>
+                        <option value="gambar(5).png">Aisyah di Kebun Bunga</option>
+                        <option value="gambar(6).png">Fathimah di Kebun Dinosaurus</option>
+                        <option value="gambar(7).png">Fathimah di Kastil Salju</option>
+                        <option value="gambar(8).png">50 Ribuan</option>
+                        <option value="gambar(9).png">Para Bayi</option>
+                        <option value="gambar(10).png">Ibrahim Haji</option>
+                        <option value="gambar(11).png">Ibrahim Pidato</option>
+                        <option value="gambar(12).png">Aisyah & Fathimah di Istana Pasir</option>
+                        <option value="gambar(13).png">Muhammad di Kolam Bola</option>
+                        <option value="gambar(14).png">Muhammad & Masryam di Kolam Bola</option>
+                        <option value="gambar(15).png">Maryam Balapan Mobil</option>
+                        <option value="gambar(16).png">Maryam dan Abi ke Kebun Binatang</option>
+                        <option value="gambar(17).png">Maryam & Dinosaurus</option>
+                        <option value="gambar(18).png">Muhammad di Madinah</option>
+                        <option value="gambar(19).png">Muhammad Bengkel Mainan</option>
+                        <option value="gambar(20).png">Muhammad Menunggang Sapi</option>
+                        <option value="https://images.unsplash.com/photo-1579546929518-9e396f3cc809?auto=format&fit=crop&w=500&q=80">Gambar Pemandangan (Online Default)</option>
+                    </select>
+                    <div class="dropdown-arrow">&#9662;</div>
+                </div>
+
+                <div class="preview-container">
+                    <img id="image-preview" src="" alt="Preview">
+                </div>
+            </div>
+
+            <div class="settings-group">
+                <h3>2. Pilih Tingkat Kesulitan</h3>
+                <div class="difficulty-buttons">
+                    <button class="btn-diff active" data-level="3">Mudah (3x3)</button>
+                    <button class="btn-diff" data-level="4">Sedang (4x4)</button>
+                    <button class="btn-diff" data-level="5">Sulit (5x5)</button>
+                    <button class="btn-diff" data-level="6">Ahli (6x6)</button>
+                </div>
+            </div>
+
+            <button id="btn-start" class="btn-primary btn-large">Mulai Bermain</button>
+
+            <div class="leaderboard">
+                <div class="lb-header">
+                    <h3>Rekor Tercepat</h3>
+                    <button id="btn-reset-score" class="btn-danger">Reset Rekor</button>
+                </div>
+                <ul id="score-list"></ul>
+            </div>
+            
+            <button id="btn-logout" class="btn-secondary" style="margin-top: 20px;">Keluar</button>
+        </div>
+    </div>
+
+    <!-- Layar Game -->
+    <div id="game-screen" class="screen">
+        <div class="game-header">
+            <button id="btn-back" class="btn-secondary">Kembali</button>
+            <div class="timer-display">Waktu: <span id="timer">00:00</span></div>
+            <div class="level-display">Level: <span id="current-level-text">Mudah</span></div>
+        </div>
+
+        <div class="game-container">
+            <div id="puzzle-board"></div>
+            <div id="puzzle-pieces"></div>
+        </div>
+    </div>
+
+    <!-- Modal Menang -->
+    <div id="win-modal" class="modal">
+        <div class="modal-content pop-out">
+            <h2>Luar Biasa! 🎉</h2>
+            <p>Anda menyelesaikan puzzle dalam waktu <strong id="win-time"></strong></p>
+            <p id="new-record-msg" class="highlight-text" style="display: none;">🌟 Rekor Baru! 🌟</p>
+            <button id="btn-play-again" class="btn-primary">Main Lagi</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
