@@ -1,40 +1,50 @@
-// --- Konfigurasi ---
+// --- Konfigurasi & State ---
 const ALLOWED_USERS = ['aisyah', 'fathimah', 'muhammad', 'maryam', 'ibrahim'];
 let currentUser = '';
 let currentImage = '';
-let gridSize = 3; // Default Mudah
+let gridSize = 3;
 let timerInterval = null;
 let seconds = 0;
-let isPlaying = false;
+let currentGameMode = 'jigsaw';
 
-// --- Elemen DOM ---
+// Elemen DOM
 const screens = {
     login: document.getElementById('login-screen'),
     dashboard: document.getElementById('dashboard-screen'),
-    game: document.getElementById('game-screen')
+    game: document.getElementById('game-screen'),
+    tetrisGame: document.getElementById('tetris-game-screen'),
+    snakeGame: document.getElementById('snake-game-screen')
 };
 
-// Login Elements
 const usernameInput = document.getElementById('username');
 const btnLogin = document.getElementById('btn-login');
 const loginError = document.getElementById('login-error');
-
-// Dashboard Elements
 const displayName = document.getElementById('display-name');
 const btnLogout = document.getElementById('btn-logout');
+
+const btnModeJigsaw = document.getElementById('btn-mode-jigsaw');
+const btnModeTetris = document.getElementById('btn-mode-tetris');
+const btnModeSnake = document.getElementById('btn-mode-snake');
+
+const jigsawConfigPanel = document.getElementById('jigsaw-config-panel');
+const tetrisConfigPanel = document.getElementById('tetris-config-panel');
+const snakeConfigPanel = document.getElementById('snake-config-panel');
+
 const imageSelect = document.getElementById('image-select');
 const imagePreview = document.getElementById('image-preview');
 const btnDiffs = document.querySelectorAll('.btn-diff');
-const btnStart = document.getElementById('btn-start');
-const scoreList = document.getElementById('score-list');
-const btnResetScore = document.getElementById('btn-reset-score');
-
-// Game Elements
 const puzzleBoard = document.getElementById('puzzle-board');
 const puzzlePieces = document.getElementById('puzzle-pieces');
 const timerDisplay = document.getElementById('timer');
 const currentLevelText = document.getElementById('current-level-text');
+
+const btnStart = document.getElementById('btn-start');
 const btnBack = document.getElementById('btn-back');
+const btnTetrisBack = document.getElementById('btn-tetris-back');
+const btnSnakeBack = document.getElementById('btn-snake-back');
+
+const scoreList = document.getElementById('score-list');
+const btnResetScore = document.getElementById('btn-reset-score');
 
 // Modal
 const winModal = document.getElementById('win-modal');
@@ -42,13 +52,12 @@ const winTimeDisplay = document.getElementById('win-time');
 const newRecordMsg = document.getElementById('new-record-msg');
 const btnPlayAgain = document.getElementById('btn-play-again');
 
-// --- Inisialisasi ---
+// Inisialisasi Awal
 window.onload = () => {
-    // Set default image from dropdown
     currentImage = imageSelect.value;
     imagePreview.src = currentImage;
     
-    const savedUser = sessionStorage.getItem('jigsaw_user');
+    const savedUser = sessionStorage.getItem('game_user');
     if (savedUser && ALLOWED_USERS.includes(savedUser)) {
         currentUser = savedUser;
         showScreen('dashboard');
@@ -56,55 +65,70 @@ window.onload = () => {
     }
 };
 
-// --- Navigasi ---
 function showScreen(screenName) {
     Object.values(screens).forEach(s => s.classList.remove('active'));
     screens[screenName].classList.add('active');
 }
 
-// --- Autentikasi ---
+// Autentikasi Login
 btnLogin.addEventListener('click', () => {
     const name = usernameInput.value.trim().toLowerCase();
     if (ALLOWED_USERS.includes(name)) {
         currentUser = name;
-        sessionStorage.setItem('jigsaw_user', name);
+        sessionStorage.setItem('game_user', name);
         loginError.textContent = '';
         showScreen('dashboard');
         updateDashboard();
     } else {
-        loginError.textContent = 'Nama pengguna tidak diizinkan. Cek kembali!';
-        // Fallback animation if needed, though dropdown is always valid
-        usernameInput.parentElement.classList.add('shake');
-        setTimeout(() => usernameInput.parentElement.classList.remove('shake'), 500);
+        loginError.textContent = 'Harap pilih nama pengguna dari daftar!';
     }
 });
 
 btnLogout.addEventListener('click', () => {
-    sessionStorage.removeItem('jigsaw_user');
+    sessionStorage.removeItem('game_user');
     currentUser = '';
+    usernameInput.selectedIndex = 0;
     showScreen('login');
 });
 
-// --- Dashboard Logic ---
+// Mode Switcher
+function setActiveMode(mode) {
+    currentGameMode = mode;
+    btnModeJigsaw.classList.remove('active');
+    btnModeTetris.classList.remove('active');
+    btnModeSnake.classList.remove('active');
+    
+    jigsawConfigPanel.style.display = 'none';
+    tetrisConfigPanel.style.display = 'none';
+    snakeConfigPanel.style.display = 'none';
+
+    if (mode === 'jigsaw') {
+        btnModeJigsaw.classList.add('active');
+        jigsawConfigPanel.style.display = 'block';
+    } else if (mode === 'tetris') {
+        btnModeTetris.classList.add('active');
+        tetrisConfigPanel.style.display = 'block';
+    } else if (mode === 'snake') {
+        btnModeSnake.classList.add('active');
+        snakeConfigPanel.style.display = 'block';
+    }
+    loadScores();
+}
+
+btnModeJigsaw.addEventListener('click', () => setActiveMode('jigsaw'));
+btnModeTetris.addEventListener('click', () => setActiveMode('tetris'));
+btnModeSnake.addEventListener('click', () => setActiveMode('snake'));
+
 function updateDashboard() {
     displayName.textContent = currentUser.charAt(0).toUpperCase() + currentUser.slice(1);
     loadScores();
 }
 
-// Image Dropdown Handling
 imageSelect.addEventListener('change', (e) => {
     currentImage = e.target.value;
-    // Set fallback image if local image is broken/not found
-    imagePreview.onerror = function() {
-        // Prevent infinite loop if fallback also fails
-        imagePreview.onerror = null; 
-        imagePreview.src = "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?auto=format&fit=crop&w=500&q=80";
-        console.warn("Gambar lokal tidak ditemukan. Pastikan file ada di folder yang sama.");
-    };
     imagePreview.src = currentImage;
 });
 
-// Difficulty Selection
 btnDiffs.forEach(btn => {
     btn.addEventListener('click', (e) => {
         btnDiffs.forEach(b => b.classList.remove('active'));
@@ -114,185 +138,156 @@ btnDiffs.forEach(btn => {
     });
 });
 
-// Start Game
 btnStart.addEventListener('click', () => {
-    showScreen('game');
-    initGame();
+    if (currentGameMode === 'jigsaw') {
+        showScreen('game');
+        initJigsawGame();
+    } else if (currentGameMode === 'tetris') {
+        showScreen('tetrisGame');
+        initTetrisGame();
+    } else if (currentGameMode === 'snake') {
+        showScreen('snakeGame');
+        initSnakeGame();
+    }
 });
 
-btnBack.addEventListener('click', () => {
-    stopTimer();
-    showScreen('dashboard');
-});
+btnBack.addEventListener('click', () => { stopTimer(); showScreen('dashboard'); });
+btnTetrisBack.addEventListener('click', () => { stopTetris(); showScreen('dashboard'); });
+btnSnakeBack.addEventListener('click', () => { stopSnake(); showScreen('dashboard'); });
 
-// --- Sistem Rekor (Local Storage) ---
+// --- Rekor Skor LocalStorage ---
 function getScores() {
-    const scores = JSON.parse(localStorage.getItem('jigsaw_scores')) || {};
-    if (!scores[gridSize]) scores[gridSize] = [];
-    return scores;
+    let key = 'jigsaw_scores_' + gridSize;
+    if (currentGameMode === 'tetris') key = 'tetris_scores';
+    if (currentGameMode === 'snake') key = 'snake_scores';
+    return JSON.parse(localStorage.getItem(key)) || [];
 }
 
-function saveScore(timeInSeconds) {
-    const scores = getScores();
-    scores[gridSize].push({
-        user: currentUser,
-        time: timeInSeconds,
-        date: new Date().toLocaleDateString()
-    });
-    scores[gridSize].sort((a, b) => a.time - b.time);
-    localStorage.setItem('jigsaw_scores', JSON.stringify(scores));
+function saveScore(val) {
+    let key = 'jigsaw_scores_' + gridSize;
+    if (currentGameMode === 'tetris') key = 'tetris_scores';
+    if (currentGameMode === 'snake') key = 'snake_scores';
     
-    if (scores[gridSize][0].time === timeInSeconds && scores[gridSize][0].user === currentUser) {
-        newRecordMsg.style.display = 'block';
+    let scores = JSON.parse(localStorage.getItem(key)) || [];
+    scores.push({ user: currentUser, score: val, date: new Date().toLocaleDateString() });
+    
+    if (currentGameMode === 'jigsaw') {
+        scores.sort((a, b) => a.score - b.score);
     } else {
-        newRecordMsg.style.display = 'none';
+        scores.sort((a, b) => b.score - a.score);
     }
+    localStorage.setItem(key, JSON.stringify(scores));
 }
 
 function loadScores() {
-    const scores = getScores()[gridSize];
+    const scores = getScores();
     scoreList.innerHTML = '';
     if (scores.length === 0) {
-        scoreList.innerHTML = '<li>Belum ada rekor di level ini.</li>';
+        scoreList.innerHTML = '<li>Belum ada rekor tercatat.</li>';
         return;
     }
     
-    scores.slice(0, 5).forEach((score, index) => {
+    scores.slice(0, 4).forEach((item, index) => {
         const li = document.createElement('li');
-        li.innerHTML = `<span>${index + 1}. ${score.user.toUpperCase()}</span> <span>${formatTime(score.time)}</span>`;
+        let displayVal = currentGameMode === 'jigsaw' ? formatTime(item.score) : `${item.score} Poin`;
+        li.innerHTML = `<span>${index + 1}. ${item.user.toUpperCase()}</span> <span>${displayVal}</span>`;
         scoreList.appendChild(li);
     });
 }
 
 btnResetScore.addEventListener('click', () => {
-    if(confirm('Yakin ingin mereset semua rekor?')) {
-        localStorage.removeItem('jigsaw_scores');
+    if(confirm('Reset semua rekor untuk mode ini?')) {
+        let key = 'jigsaw_scores_' + gridSize;
+        if (currentGameMode === 'tetris') key = 'tetris_scores';
+        if (currentGameMode === 'snake') key = 'snake_scores';
+        localStorage.removeItem(key);
         loadScores();
     }
 });
 
-btnDiffs.forEach(btn => {
-    btn.addEventListener('click', loadScores);
-});
-
-// --- Game Logic ---
-function initGame() {
+// --- Jigsaw Game Engine ---
+let selectedPiece = null;
+function initJigsawGame() {
     puzzleBoard.innerHTML = '';
     puzzlePieces.innerHTML = '';
+    selectedPiece = null;
     
     puzzleBoard.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
     puzzleBoard.style.gridTemplateRows = `repeat(${gridSize}, 1fr)`;
     
     let piecesArray = [];
+    const boardSizePx = 300;
+    const pieceSize = boardSizePx / gridSize;
 
     for (let row = 0; row < gridSize; row++) {
         for (let col = 0; col < gridSize; col++) {
             const index = row * gridSize + col;
-            
-            // Cell (Target Drop)
             const cell = document.createElement('div');
             cell.classList.add('board-cell');
             cell.setAttribute('data-index', index);
             
-            cell.addEventListener('dragover', dragOver);
-            cell.addEventListener('dragenter', dragEnter);
-            cell.addEventListener('dragleave', dragLeave);
-            cell.addEventListener('drop', dropPiece);
-            
+            cell.addEventListener('click', () => {
+                if (selectedPiece) {
+                    if (cell.children.length === 0) {
+                        cell.appendChild(selectedPiece);
+                    } else {
+                        const existingPiece = cell.children[0];
+                        puzzlePieces.appendChild(existingPiece);
+                        cell.appendChild(selectedPiece);
+                        existingPiece.classList.remove('correct');
+                    }
+                    selectedPiece.classList.remove('selected');
+                    selectedPiece = null;
+                    checkJigsawWin();
+                }
+            });
             puzzleBoard.appendChild(cell);
 
-            // Piece (Potongan yang bisa didrag)
             const piece = document.createElement('div');
             piece.classList.add('puzzle-piece');
-            piece.setAttribute('draggable', 'true');
             piece.setAttribute('data-index', index);
-            
-            // FIX: Menambahkan tanda kutip pada URL agar bisa membaca tanda kurung ()
             piece.style.backgroundImage = `url("${currentImage}")`;
-            piece.style.backgroundSize = `${gridSize * 100}% ${gridSize * 100}%`;
-            piece.style.backgroundPosition = `${(col * 100) / (gridSize - 1)}% ${(row * 100) / (gridSize - 1)}%`;
+            piece.style.backgroundSize = `${boardSizePx}px ${boardSizePx}px`;
+            piece.style.backgroundPosition = `-${col * pieceSize}px -${row * pieceSize}px`;
+            piece.style.width = `${pieceSize - 2}px`;
+            piece.style.height = `${pieceSize - 2}px`;
             
-            piece.style.width = `${400 / gridSize - 2}px`; 
-            piece.style.height = `${400 / gridSize - 2}px`;
-            
-            piece.addEventListener('dragstart', dragStart);
-            piece.addEventListener('dragend', dragEnd);
-            
+            piece.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (piece.classList.contains('correct')) return;
+                if (selectedPiece === piece) {
+                    piece.classList.remove('selected');
+                    selectedPiece = null;
+                } else {
+                    if (selectedPiece) selectedPiece.classList.remove('selected');
+                    selectedPiece = piece;
+                    piece.classList.add('selected');
+                }
+            });
             piecesArray.push(piece);
         }
     }
-
     piecesArray.sort(() => Math.random() - 0.5);
     piecesArray.forEach(p => puzzlePieces.appendChild(p));
 
     resetTimer();
     startTimer();
-    isPlaying = true;
 }
 
-// --- Drag & Drop Handlers ---
-let draggedPiece = null;
-
-function dragStart(e) {
-    draggedPiece = this;
-    setTimeout(() => this.style.opacity = '0.5', 0);
-}
-
-function dragEnd() {
-    setTimeout(() => this.style.opacity = '1', 0);
-    draggedPiece = null;
-    checkWinCondition();
-}
-
-function dragOver(e) { e.preventDefault(); }
-function dragEnter(e) { 
-    e.preventDefault(); 
-    this.style.background = 'rgba(255,255,255,0.2)'; 
-}
-function dragLeave() { 
-    this.style.background = 'rgba(255,255,255,0.05)'; 
-}
-
-function dropPiece(e) {
-    this.style.background = 'rgba(255,255,255,0.05)';
-    if (this.children.length === 0) {
-        this.appendChild(draggedPiece);
-        const pieceIndex = draggedPiece.getAttribute('data-index');
-        const cellIndex = this.getAttribute('data-index');
-        
-        if (pieceIndex === cellIndex) {
-            draggedPiece.classList.add('correct');
-            draggedPiece.setAttribute('draggable', 'false');
-        } else {
-            draggedPiece.classList.remove('correct');
-            draggedPiece.setAttribute('draggable', 'true');
-        }
-    } else {
-        puzzlePieces.appendChild(draggedPiece);
-    }
-}
-
-puzzlePieces.addEventListener('dragover', e => e.preventDefault());
-puzzlePieces.addEventListener('drop', function(e) {
-    this.appendChild(draggedPiece);
-    draggedPiece.classList.remove('correct');
-    draggedPiece.setAttribute('draggable', 'true');
-});
-
-// --- Pengecekan Menang ---
-function checkWinCondition() {
+function checkJigsawWin() {
     const cells = document.querySelectorAll('.board-cell');
     let correctCount = 0;
-    
     cells.forEach(cell => {
         if (cell.children.length > 0) {
             const piece = cell.children[0];
             if (cell.getAttribute('data-index') === piece.getAttribute('data-index')) {
                 correctCount++;
+                piece.classList.add('correct');
+            } else {
+                piece.classList.remove('correct');
             }
         }
     });
-    
     if (correctCount === gridSize * gridSize) {
         stopTimer();
         saveScore(seconds);
@@ -300,7 +295,206 @@ function checkWinCondition() {
     }
 }
 
-// --- Timer ---
+// --- Tetris Game Engine ---
+let tetrisInterval = null;
+function initTetrisGame() {
+    const canvas = document.getElementById('tetris-canvas');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('tetris-score');
+    
+    const ROWS = 20, COLS = 10, BLOCK_SIZE = 20;
+    let board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+    let score = 0;
+    scoreEl.textContent = score;
+
+    const SHAPES = [
+        [[1,1,1,1]], // I
+        [[1,1],[1,1]], // O
+        [[0,1,0],[1,1,1]], // T
+        [[1,0,0],[1,1,1]], // L
+        [[0,0,1],[1,1,1]], // J
+        [[0,1,1],[1,1,0]], // S
+        [[1,1,0],[0,1,1]]  // Z
+    ];
+    const COLORS = ['', '#38bdf8', '#facc15', '#c084fc', '#fb923c', '#60a5fa', '#4ade80', '#f87171'];
+
+    let currentPiece = {
+        shape: SHAPES[Math.floor(Math.random() * SHAPES.length)],
+        color: Math.floor(Math.random() * 7) + 1,
+        x: 3, y: 0
+    };
+
+    function draw() {
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Gambar Papan
+        for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS; c++) {
+                if (board[r][c]) {
+                    ctx.fillStyle = COLORS[board[r][c]];
+                    ctx.fillRect(c * BLOCK_SIZE, r * BLOCK_SIZE, BLOCK_SIZE - 1, BLOCK_SIZE - 1);
+                }
+            }
+        }
+        // Gambar Blok Aktif
+        currentPiece.shape.forEach((row, r) => {
+            row.forEach((val, c) => {
+                if (val) {
+                    ctx.fillStyle = COLORS[currentPiece.color];
+                    ctx.fillRect((currentPiece.x + c) * BLOCK_SIZE, (currentPiece.y + r) * BLOCK_SIZE, BLOCK_SIZE - 1, BLOCK_SIZE - 1);
+                }
+            });
+        });
+    }
+
+    function collide(offsetX, offsetY, shape) {
+        for (let r = 0; r < shape.length; r++) {
+            for (let c = 0; c < shape[r].length; c++) {
+                if (shape[r][c]) {
+                    let newX = currentPiece.x + c + offsetX;
+                    let newY = currentPiece.y + r + offsetY;
+                    if (newX < 0 || newX >= COLS || newY >= ROWS) return true;
+                    if (newY >= 0 && board[newY][newX]) return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    function merge() {
+        currentPiece.shape.forEach((row, r) => {
+            row.forEach((val, c) => {
+                if (val && currentPiece.y + r >= 0) {
+                    board[currentPiece.y + r][currentPiece.x + c] = currentPiece.color;
+                }
+            });
+        });
+    }
+
+    function clearLines() {
+        let lines = 0;
+        outer: for (let r = ROWS - 1; r >= 0; r--) {
+            for (let c = 0; c < COLS; c++) {
+                if (!board[r][c]) continue outer;
+            }
+            board.splice(r, 1);
+            board.unshift(Array(COLS).fill(0));
+            lines++;
+            r++;
+        }
+        if (lines > 0) {
+            score += lines * 100;
+            scoreEl.textContent = score;
+            saveScore(score);
+        }
+    }
+
+    function drop() {
+        if (!collide(0, 1, currentPiece.shape)) {
+            currentPiece.y++;
+        } else {
+            merge();
+            clearLines();
+            currentPiece = {
+                shape: SHAPES[Math.floor(Math.random() * SHAPES.length)],
+                color: Math.floor(Math.random() * 7) + 1,
+                x: 3, y: 0
+            };
+            if (collide(0, 0, currentPiece.shape)) {
+                alert('Game Over! Skor Anda: ' + score);
+                board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+                score = 0;
+                scoreEl.textContent = score;
+            }
+        }
+        draw();
+    }
+
+    document.getElementById('tetris-left').onclick = () => { if (!collide(-1, 0, currentPiece.shape)) currentPiece.x--; draw(); };
+    document.getElementById('tetris-right').onclick = () => { if (!collide(1, 0, currentPiece.shape)) currentPiece.x++; draw(); };
+    document.getElementById('tetris-down').onclick = drop;
+    document.getElementById('tetris-rotate').onclick = () => {
+        const rotated = currentPiece.shape[0].map((_, i) => currentPiece.shape.map(row => row[i]).reverse());
+        if (!collide(0, 0, rotated)) currentPiece.shape = rotated;
+        draw();
+    };
+
+    if (tetrisInterval) clearInterval(tetrisInterval);
+    tetrisInterval = setInterval(drop, 500);
+    draw();
+}
+
+function stopTetris() { clearInterval(tetrisInterval); }
+
+// --- Snake Game Engine ---
+let snakeInterval = null;
+function initSnakeGame() {
+    const canvas = document.getElementById('snake-canvas');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('snake-score');
+    
+    const gridSize = 15;
+    const tileCount = 20;
+    let snake = [{ x: 10, y: 10 }];
+    let food = { x: 5, y: 5 };
+    let dx = 1, dy = 0;
+    let score = 0;
+    scoreEl.textContent = score;
+
+    function gameLoop() {
+        // Gerak ular
+        const head = { x: snake[0].x + dx, y: snake[0].y + dy };
+        
+        // Tabrak dinding
+        if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount || 
+            snake.some(part => part.x === head.x && part.y === head.y)) {
+            alert('Game Over! Skor Snake: ' + score);
+            snake = [{ x: 10, y: 10 }];
+            score = 0;
+            scoreEl.textContent = score;
+            dx = 1; dy = 0;
+        }
+
+        snake.unshift(head);
+
+        // Makan buah
+        if (head.x === food.x && head.y === food.y) {
+            score += 10;
+            scoreEl.textContent = score;
+            saveScore(score);
+            food = { x: Math.floor(Math.random() * tileCount), y: Math.floor(Math.random() * tileCount) };
+        } else {
+            snake.pop();
+        }
+
+        // Render Canvas
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Gambar Makanan (Buah Merah)
+        ctx.fillStyle = '#ef4444';
+        ctx.fillRect(food.x * gridSize, food.y * gridSize, gridSize - 2, gridSize - 2);
+
+        // Gambar Ular (Warna-warni Hijau)
+        snake.forEach((part, index) => {
+            ctx.fillStyle = index === 0 ? '#4ade80' : '#22c55e';
+            ctx.fillRect(part.x * gridSize, part.y * gridSize, gridSize - 2, gridSize - 2);
+        });
+    }
+
+    document.getElementById('snake-up').onclick = () => { if (dy === 0) { dx = 0; dy = -1; } };
+    document.getElementById('snake-down').onclick = () => { if (dy === 0) { dx = 0; dy = 1; } };
+    document.getElementById('snake-left').onclick = () => { if (dx === 0) { dx = -1; dy = 0; } };
+    document.getElementById('snake-right').onclick = () => { if (dx === 0) { dx = 1; dy = 0; } };
+
+    if (snakeInterval) clearInterval(snakeInterval);
+    snakeInterval = setInterval(gameLoop, 130);
+}
+
+function stopSnake() { clearInterval(snakeInterval); }
+
+// --- Timer Jigsaw ---
 function formatTime(sec) {
     const m = Math.floor(sec / 60).toString().padStart(2, '0');
     const s = (sec % 60).toString().padStart(2, '0');
@@ -314,17 +508,9 @@ function startTimer() {
     }, 1000);
 }
 
-function stopTimer() {
-    clearInterval(timerInterval);
-}
+function stopTimer() { clearInterval(timerInterval); }
+function resetTimer() { stopTimer(); seconds = 0; timerDisplay.textContent = '00:00'; }
 
-function resetTimer() {
-    stopTimer();
-    seconds = 0;
-    timerDisplay.textContent = '00:00';
-}
-
-// --- Win Modal ---
 function showWinModal() {
     winTimeDisplay.textContent = formatTime(seconds);
     winModal.classList.add('active');
@@ -333,5 +519,5 @@ function showWinModal() {
 btnPlayAgain.addEventListener('click', () => {
     winModal.classList.remove('active');
     loadScores();
-    initGame();
+    initJigsawGame();
 });
