@@ -145,7 +145,7 @@
                     <button id="btn-mode-tower" class="btn-mode">🏢 Menara Tinggi</button>
                     <button id="btn-mode-star" class="btn-mode">🎯 Panah Sakti</button>
                     <button id="btn-mode-tank" class="btn-mode">🛡️ Perisai Tank</button>
-                    <button id="btn-mode-arrow" class="btn-mode">🏹 Pemanah Bintang</button>
+                    <button id="btn-mode-arrow" class="btn-mode">🏹 Pemanah Kilat</button>
                 </div>
             </div>
 
@@ -1518,14 +1518,14 @@ menuLoop();
 </body>
 </html>
     </script>
-    <!-- ARROW: Pemanah Bintang -->
+    <!-- ARROW: Pemanah Kilat -->
     <script type="text/plain" id="html-arrow">
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pemanah Bintang</title>
+    <title>Pemanah Kilat</title>
     <style>
         :root {
             --bg: #0f111a;
@@ -1642,7 +1642,7 @@ menuLoop();
 
     <div class="ui-layer" id="start-screen">
         <div class="panel">
-            <h1>Pemanah Bintang</h1>
+            <h1>Pemanah Kilat</h1>
             <p>Pertahankan pusat sampai akhir.</p>
             <button id="start-btn">Mulai Main</button>
             <div class="controls-hint">Ketuk/Klik atau tahan untuk menembak.<br>Tekan ESC untuk jeda.</div>
@@ -1766,7 +1766,7 @@ function updateScore(amount) {
     document.getElementById('hud-score').innerText = score;
     if (score > highScore) {
         highScore = score;
-        localStorage.setItem('arrowAttackHighScore', highScore); window.parent.postMessage({type:'saveScore', game:'Pemanah Bintang', score: score}, '*');
+        localStorage.setItem('arrowAttackHighScore', highScore); window.parent.postMessage({type:'saveScore', game:'Pemanah Kilat', score: score}, '*');
         document.getElementById('hud-highscore').innerText = highScore;
     }
 }
@@ -3273,7 +3273,7 @@ draw();
                     'tower': '🏢 MULAI MENARA TINGGI',
                     'star': '🎯 MULAI PANAH SAKTI',
                     'tank': '🛡️ MULAI PERISAI TANK',
-                    'arrow': '🏹 MULAI PEMANAH BINTANG'
+                    'arrow': '🏹 MULAI PEMANAH KILAT'
                 };
                 startBtn.textContent = labels[mode] || '🚀 INISIASI MISI';
             }
