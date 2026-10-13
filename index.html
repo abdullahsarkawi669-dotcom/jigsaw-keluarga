@@ -135,8 +135,13 @@
         <div class="glass-card" style="max-width: 600px; width: 95%;">
             <h2>Halo, <span id="display-name" style="color: #fff;"></span>! 👋</h2>
 
-            <button id="btn-sync" class="btn-primary" style="background: linear-gradient(to right, #10b981, #059669); margin-bottom: 10px; box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);">🔄 Sinkronisasi Sistem</button>
-            <p id="sync-status" class="help-text" style="text-align: center; color: #facc15;"></p>
+            <button id="btn-sync" class="btn-primary" style="background: linear-gradient(to right, #10b981, #059669); margin-bottom: 10px; box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);">🔄 Sinkronisasi ke Google Sheets</button>
+            <p id="sync-status" class="help-text" style="text-align: center; color: #facc15;">Belum dikonfigurasi — klik tombol di bawah untuk setup URL Apps Script</p>
+            <div style="display: flex; gap: 8px; margin-bottom: 15px;">
+                <button id="btn-sync-settings" class="btn-secondary" style="margin: 0; padding: 8px 12px; font-size: 0.8rem; flex: 1;">⚙️ Atur URL</button>
+                <button id="btn-test-connection" class="btn-secondary" style="margin: 0; padding: 8px 12px; font-size: 0.8rem; flex: 1; border-color: var(--neon-blue); color: var(--neon-blue); box-shadow: inset 0 0 10px rgba(0, 243, 255, 0.2);">🔌 Test Koneksi</button>
+                <button id="btn-show-script-code" class="btn-secondary" style="margin: 0; padding: 8px 12px; font-size: 0.8rem; flex: 1; border-color: var(--neon-gold); color: var(--neon-gold); box-shadow: inset 0 0 10px rgba(255, 215, 0, 0.2);">📋 Lihat Kode</button>
+            </div>
 
             <div class="settings-group">
                 <h3>🎮 Pilih Misi Tempur</h3>
@@ -145,7 +150,7 @@
                     <button id="btn-mode-tower" class="btn-mode">🏢 Menara Tinggi</button>
                     <button id="btn-mode-star" class="btn-mode">🎯 Panah Sakti</button>
                     <button id="btn-mode-tank" class="btn-mode">🛡️ Perisai Tank</button>
-                    <button id="btn-mode-arrow" class="btn-mode">🏹 Pemanah Kilat</button>
+                    <button id="btn-mode-arrow" class="btn-mode">🏹 Pemanah Bintang</button>
                 </div>
             </div>
 
@@ -227,6 +232,19 @@
             <p>Waktu Penyelesaian: <strong id="win-time" style="color: var(--neon-blue); font-size: 1.2rem;"></strong></p>
             <button id="btn-save-score" class="btn-primary" style="background: linear-gradient(45deg, #10b981, #059669); margin-top: 15px;">Simpan Log</button>
             <button id="btn-play-again" class="btn-secondary" style="margin-top:10px;">Ulangi Misi</button>
+        </div>
+    </div>
+
+    <!-- ================= MODAL KODE APPS SCRIPT ================= -->
+    <div id="script-code-modal" class="modal">
+        <div class="modal-content pop-out" style="max-width: 600px; text-align: left;">
+            <h2 style="color: var(--neon-gold); text-shadow: 0 0 10px var(--neon-gold); font-size: 1.2rem;">📋 Kode Google Apps Script</h2>
+            <p style="font-size: 0.85rem; color: #ccc; margin-bottom: 12px;">Copy kode di bawah, lalu paste ke editor Apps Script (di spreadsheet Anda: Extensions → Apps Script).</p>
+            <textarea id="script-code-textarea" readonly style="width: 100%; height: 280px; background: #0b0c10; color: #c5c6c7; border: 1px solid var(--neon-blue); border-radius: 8px; padding: 12px; font-family: 'Courier New', monospace; font-size: 0.75rem; line-height: 1.4; resize: vertical;"></textarea>
+            <div style="display: flex; gap: 8px; margin-top: 12px;">
+                <button id="btn-copy-script-code" class="btn-primary" style="margin: 0; flex: 1;">📋 Copy ke Clipboard</button>
+                <button id="btn-close-script-code" class="btn-secondary" style="margin: 0; flex: 1;">Tutup</button>
+            </div>
         </div>
     </div>
 
@@ -1518,14 +1536,14 @@ menuLoop();
 </body>
 </html>
     </script>
-    <!-- ARROW: Pemanah Kilat -->
+    <!-- ARROW: Pemanah Bintang -->
     <script type="text/plain" id="html-arrow">
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pemanah Kilat</title>
+    <title>Pemanah Bintang</title>
     <style>
         :root {
             --bg: #0f111a;
@@ -1627,6 +1645,19 @@ menuLoop();
             pointer-events: auto;
             display: none;
         }
+        #instruction-banner {
+            position: absolute; top: 80px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,255,255,0.18); border: 2px solid var(--primary);
+            color: var(--primary); padding: 14px 24px; border-radius: 12px;
+            font-size: 1.1rem; font-weight: bold; text-align: center;
+            text-shadow: 0 0 10px var(--primary); box-shadow: 0 0 25px rgba(0,255,255,0.4);
+            pointer-events: none; z-index: 5; display: none; max-width: 90%;
+            animation: pulseGlow 1.5s ease-in-out infinite;
+        }
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 25px rgba(0,255,255,0.4); transform: translateX(-50%) scale(1); }
+            50% { box-shadow: 0 0 40px rgba(0,255,255,0.8); transform: translateX(-50%) scale(1.05); }
+        }
     </style>
 </head>
 <body>
@@ -1642,12 +1673,14 @@ menuLoop();
 
     <div class="ui-layer" id="start-screen">
         <div class="panel">
-            <h1>Pemanah Kilat</h1>
+            <h1>Pemanah Bintang</h1>
             <p>Pertahankan pusat sampai akhir.</p>
             <button id="start-btn">Mulai Main</button>
-            <div class="controls-hint">Ketuk/Klik atau tahan untuk menembak.<br>Tekan ESC untuk jeda.</div>
+            <div class="controls-hint" style="font-size:1.1rem;color:#00ffff;border:2px solid #00ffff;padding:12px;border-radius:10px;margin-top:20px;background:rgba(0,255,255,0.1);box-shadow:0 0 15px rgba(0,255,255,0.3);"><strong style="font-size:1.3rem;display:block;margin-bottom:8px;">👉 KLIK / TAP &amp; TAHAN di layar untuk menembak! 👈</strong>Klik di mana saja pada layar — pemain akan menembak otomatis ke arah kursor/finger Anda.<br>Tekan ESC untuk jeda.</div>
         </div>
     </div>
+
+    <div id="instruction-banner">👆 KLIK &amp; TAHAN di layar untuk MENEMBAK! Musuh akan datang dalam 3 detik...</div>
 
     <div class="ui-layer hidden" id="game-over-screen">
         <div class="panel">
@@ -1766,7 +1799,7 @@ function updateScore(amount) {
     document.getElementById('hud-score').innerText = score;
     if (score > highScore) {
         highScore = score;
-        localStorage.setItem('arrowAttackHighScore', highScore); window.parent.postMessage({type:'saveScore', game:'Pemanah Kilat', score: score}, '*');
+        localStorage.setItem('arrowAttackHighScore', highScore); window.parent.postMessage({type:'saveScore', game:'Pemanah Bintang', score: score}, '*');
         document.getElementById('hud-highscore').innerText = highScore;
     }
 }
@@ -1945,6 +1978,9 @@ class Particle {
 
 // --- GAME LOGIC ---
 function spawnEnemy() {
+    // Grace period: no enemies for the first 3 seconds (180 frames at 60fps)
+    // to give the player time to read the instructions and start shooting.
+    if (frameCount < 180) return;
     // Spawn rate increases as difficulty increases
     let threshold = 60 / Math.max(1, (difficultyMultiplier * 0.8));
     if (frameCount % Math.floor(threshold) === 0) {
@@ -1964,6 +2000,16 @@ function startGame() {
     uiPause.classList.add('hidden');
     hud.style.display = 'block';
     pauseBtn.style.display = 'block';
+    
+    // Show instruction banner for 5 seconds
+    const _banner = document.getElementById('instruction-banner');
+    if (_banner) {
+        _banner.style.display = 'block';
+        _banner.style.opacity = '1';
+        // Fade out after 4 seconds, hide after 5
+        setTimeout(() => { _banner.style.transition = 'opacity 0.5s'; _banner.style.opacity = '0'; }, 4500);
+        setTimeout(() => { _banner.style.display = 'none'; }, 5000);
+    }
     
     document.getElementById('hud-highscore').innerText = highScore;
     
@@ -3273,7 +3319,7 @@ draw();
                     'tower': '🏢 MULAI MENARA TINGGI',
                     'star': '🎯 MULAI PANAH SAKTI',
                     'tank': '🛡️ MULAI PERISAI TANK',
-                    'arrow': '🏹 MULAI PEMANAH KILAT'
+                    'arrow': '🏹 MULAI PEMANAH BINTANG'
                 };
                 startBtn.textContent = labels[mode] || '🚀 INISIASI MISI';
             }
@@ -3498,36 +3544,366 @@ draw();
                 const key = 'kampungJawaWarrior_scores';
                 let scores = [];
                 try { scores = JSON.parse(localStorage.getItem(key) || '[]'); } catch (e) {}
-                scores.push({
+                const newEntry = {
                     user: entry.user || (currentUser ? (usernameMap[currentUser] || currentUser) : 'Tamu'),
                     game: entry.game || 'Misi',
                     score: entry.score,
                     timeStr: entry.timeStr,
-                    date: Date.now()
-                });
-                if (scores.length > 30) scores = scores.slice(scores.length - 30);
+                    date: Date.now(),
+                    synced: false,
+                    verified: false
+                };
+                scores.push(newEntry);
+                if (scores.length > 100) scores = scores.slice(scores.length - 100);
                 localStorage.setItem(key, JSON.stringify(scores));
                 loadLeaderboard();
+                // Auto-sync to Google Sheets (async, fire-and-forget)
+                syncToGoogleSheets(newEntry).then(result => {
+                    if (result.synced) {
+                        try {
+                            const arr = JSON.parse(localStorage.getItem(key) || '[]');
+                            for (const s of arr) {
+                                if (s.date === newEntry.date) {
+                                    s.synced = true;
+                                    if (result.verified) s.verified = true;
+                                    break;
+                                }
+                            }
+                            localStorage.setItem(key, JSON.stringify(arr));
+                            updateSyncStatus();
+                        } catch (e) {}
+                    } else if (result.reason && result.reason !== 'no-url') {
+                        console.warn('Auto-sync failed:', result.reason);
+                    }
+                });
+            }
+
+            // ============ GOOGLE SHEETS SYNC ============
+            const SCRIPT_URL_KEY = 'https://script.google.com/macros/s/AKfycbzfaOLjU2cTQ7fkVftwIYX5mBlTnxfOD7iJo1L-193GiMnEpzAUP4FZeE5UWgTrz1lY/exec';
+
+            function getScriptUrl() {
+                return localStorage.getItem(SCRIPT_URL_KEY) || '';
+            }
+            function setScriptUrl(url) {
+                localStorage.setItem(SCRIPT_URL_KEY, url);
+            }
+
+            function updateSyncStatus() {
+                const status = $('sync-status');
+                const url = getScriptUrl();
+                const key = 'kampungJawaWarrior_scores';
+                let scores = [];
+                try { scores = JSON.parse(localStorage.getItem(key) || '[]'); } catch (e) {}
+                const unsynced = scores.filter(s => !s.synced).length;
+                const unverified = scores.filter(s => s.synced && !s.verified).length;
+                const verified = scores.filter(s => s.verified).length;
+                if (!url) {
+                    status.textContent = '⚠️ Belum dikonfigurasi — klik ⚙️ Atur URL Apps Script di bawah';
+                    status.style.color = 'var(--neon-pink)';
+                } else if (unsynced > 0) {
+                    status.textContent = `⏳ ${unsynced} catatan belum terkirim ke Google Sheets`;
+                    status.style.color = '#facc15';
+                } else if (unverified > 0) {
+                    status.textContent = `⚠️ ${unverified} catatan terkirim tapi belum terverifikasi (mungkin Apps Script belum deploy sebagai "Anyone")`;
+                    status.style.color = '#facc15';
+                } else if (verified > 0) {
+                    status.textContent = `✅ Semua ${verified} catatan tersinkron & terverifikasi ke Google Sheets`;
+                    status.style.color = 'var(--neon-green)';
+                } else {
+                    status.textContent = '✅ URL terkonfigurasi. Mainkan game untuk mulai mengirim skor.';
+                    status.style.color = 'var(--neon-green)';
+                }
+            }
+
+            async function syncToGoogleSheets(entry) {
+                const url = getScriptUrl();
+                if (!url) return { synced: false, reason: 'no-url' };
+                const payload = JSON.stringify({
+                    user: String(entry.user || 'Tamu'),
+                    game: String(entry.game || 'Misi'),
+                    score: String(entry.score !== undefined ? entry.score : ''),
+                    timeStr: String(entry.timeStr || ''),
+                    source: 'kampung-jawa-warrior',
+                    date: new Date().toISOString()
+                });
+                // ============ Strategy 1: POST with mode: 'cors' and Content-Type: text/plain ============
+                // text/plain is a "simple" content type that doesn't trigger CORS preflight.
+                // mode: 'cors' lets us read the response so we can verify success.
+                // Apps Script deployed as "Anyone" returns Access-Control-Allow-Origin: *.
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        mode: 'cors',
+                        headers: { 'Content-Type': 'text/plain' },
+                        body: payload
+                    });
+                    if (response.ok) {
+                        try {
+                            const result = await response.json();
+                            if (result.status === 'success') {
+                                return { synced: true, verified: true };
+                            }
+                            return { synced: false, reason: result.message || 'Server returned error status' };
+                        } catch (e) {
+                            // Response wasn't JSON but HTTP 200 — assume success
+                            return { synced: true, verified: false };
+                        }
+                    }
+                    return { synced: false, reason: 'HTTP ' + response.status };
+                } catch (corsErr) {
+                    console.warn('CORS POST failed, falling back to no-cors GET:', corsErr);
+                }
+                // ============ Strategy 2: GET with query params, mode: 'no-cors' (last resort) ============
+                // We can't verify the response, but the request goes through.
+                // The user will see "synced (unverified)" status.
+                try {
+                    const params = new URLSearchParams({
+                        user: String(entry.user || 'Tamu'),
+                        game: String(entry.game || 'Misi'),
+                        score: String(entry.score !== undefined ? entry.score : ''),
+                        timeStr: String(entry.timeStr || ''),
+                        source: 'kampung-jawa-warrior'
+                    });
+                    await fetch(url + '?' + params.toString(), {
+                        method: 'GET',
+                        mode: 'no-cors'
+                    });
+                    return { synced: true, verified: false, fallback: true };
+                } catch (err2) {
+                    return { synced: false, reason: err2.message };
+                }
+            }
+
+            async function testSyncConnection() {
+                const url = getScriptUrl();
+                if (!url) return { ok: false, reason: 'no-url' };
+                const testPayload = JSON.stringify({
+                    user: '__TEST__', game: 'Connection Test', score: 0,
+                    timeStr: '', source: 'kampung-jawa-warrior-test',
+                    date: new Date().toISOString()
+                });
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        mode: 'cors',
+                        headers: { 'Content-Type': 'text/plain' },
+                        body: testPayload
+                    });
+                    if (response.ok) {
+                        try {
+                            const result = await response.json();
+                            if (result.status === 'success') {
+                                return { ok: true, verified: true, message: 'Koneksi berhasil — data dapat dikirim ke Google Sheet.' };
+                            }
+                            return { ok: false, reason: result.message || 'Server error' };
+                        } catch (e) {
+                            return { ok: true, verified: false, message: 'Koneksi terkirim (respons tidak dapat diverifikasi).' };
+                        }
+                    }
+                    return { ok: false, reason: 'HTTP ' + response.status };
+                } catch (err) {
+                    return { ok: false, reason: err.message };
+                }
             }
 
             // ============ SYNC BUTTON ============
-            $('btn-sync').addEventListener('click', () => {
+            $('btn-sync').addEventListener('click', async () => {
                 const status = $('sync-status');
-                status.textContent = '🔄 Menyinkronkan data lokal...';
+                const url = getScriptUrl();
+                if (!url) {
+                    promptForScriptUrl();
+                    return;
+                }
+                // Re-sync all local scores that are not yet synced (or all if force-sync)
+                const key = 'kampungJawaWarrior_scores';
+                let scores = [];
+                try { scores = JSON.parse(localStorage.getItem(key) || '[]'); } catch (e) {}
+                if (scores.length === 0) {
+                    status.textContent = 'ℹ️ Belum ada catatan untuk disinkronkan. Mainkan game dulu!';
+                    status.style.color = '#facc15';
+                    return;
+                }
+                // Filter to entries that haven't been verified yet
+                const toSync = scores.filter(s => !s.verified);
+                if (toSync.length === 0) {
+                    status.textContent = `✅ Semua ${scores.length} catatan sudah tersinkron & terverifikasi.`;
+                    status.style.color = 'var(--neon-green)';
+                    return;
+                }
+                status.textContent = `🔄 Mengirim ${toSync.length} catatan ke Google Sheets...`;
                 status.style.color = '#facc15';
-                setTimeout(() => {
-                    try {
-                        loadLeaderboard();
-                        const key = 'kampungJawaWarrior_scores';
-                        const scores = JSON.parse(localStorage.getItem(key) || '[]');
-                        status.textContent = `✅ Sinkronisasi selesai! ${scores.length} catatan tersimpan.`;
-                        status.style.color = 'var(--neon-green)';
-                    } catch (err) {
-                        status.textContent = '⚠️ Gagal sinkronisasi: ' + err.message;
-                        status.style.color = 'var(--neon-pink)';
+                let synced = 0, verified = 0;
+                let lastError = '';
+                for (const entry of toSync) {
+                    const result = await syncToGoogleSheets(entry);
+                    if (result.synced) {
+                        entry.synced = true;
+                        if (result.verified) { entry.verified = true; verified++; }
+                        synced++;
+                    } else {
+                        lastError = result.reason || 'Unknown error';
                     }
-                }, 800);
+                    await new Promise(r => setTimeout(r, 200));
+                }
+                localStorage.setItem(key, JSON.stringify(scores));
+                loadLeaderboard();
+                updateSyncStatus();
+                if (synced === toSync.length) {
+                    if (verified > 0) {
+                        status.textContent = `✅ Sinkronisasi terverifikasi! ${synced}/${toSync.length} catatan terkirim & dikonfirmasi oleh server.`;
+                        status.style.color = 'var(--neon-green)';
+                    } else {
+                        status.textContent = `⚠️ ${synced}/${toSync.length} catatan terkirim (tidak bisa diverifikasi — mungkin Apps Script tidak di-deploy dengan akses "Anyone"). Buka URL di browser untuk cek apakah data masuk.`;
+                        status.style.color = '#facc15';
+                    }
+                } else {
+                    status.textContent = `⚠️ Hanya ${synced}/${toSync.length} catatan terkirim. Error: ${lastError}`;
+                    status.style.color = 'var(--neon-pink)';
+                }
             });
+
+            // ============ SYNC SETTINGS BUTTON ============
+            function promptForScriptUrl() {
+                const instructions = [
+                    '📋 SETUP SINKRONISASI GOOGLE SHEETS',
+                    '',
+                    'LANGKAH 1: Buka Google Sheet Anda di',
+                    'https://docs.google.com/spreadsheets/d/1BthS4QrgVyYR87ERWcj6Do5jbQSWcS0M5Ju27nV8QdE/edit',
+                    '',
+                    'LANGKAH 2: Klik Extensions (Ekstensi) → Apps Script',
+                    '',
+                    'LANGKAH 3: Hapus kode default, paste kode dari file',
+                    'google-apps-script.gs (sudah disertakan). Save.',
+                    '',
+                    'LANGKAH 4: Run fungsi "setup" sekali (toolbar → select → setup → Run).',
+                    'Authorize saat diminta.',
+                    '',
+                    'LANGKAH 5: Deploy → New deployment → Web app',
+                    '- Description: Kampung Jawa Sync',
+                    '- Execute as: Me',
+                    '- Who has access: Anyone  ← WAJIB!',
+                    '- Deploy → Authorize',
+                    '',
+                    'LANGKAH 6: Copy URL Web App (akhiran /exec)',
+                    'dan paste di bawah:'
+                ].join('\n');
+                const input = prompt(instructions + '\n\nURL Apps Script Web App Anda:');
+                if (input && input.trim()) {
+                    const trimmed = input.trim();
+                    // Basic validation — must be a script.google.com URL
+                    if (trimmed.indexOf('script.google.com') >= 0 || trimmed.indexOf('macros') >= 0) {
+                        setScriptUrl(trimmed);
+                        alert('✅ URL tersimpan! Skor sekarang akan otomatis tersinkron ke Google Sheets setiap kali disimpan.');
+                        updateSyncStatus();
+                    } else {
+                        alert('⚠️ URL tidak terlihat seperti URL Apps Script yang valid.\nPastikan URL berbentuk https://script.google.com/macros/s/.../exec\n\nCoba lagi.');
+                    }
+                }
+            }
+            $('btn-sync-settings').addEventListener('click', promptForScriptUrl);
+
+            // ============ TEST CONNECTION BUTTON ============
+            $('btn-test-connection').addEventListener('click', async () => {
+                const status = $('sync-status');
+                const url = getScriptUrl();
+                if (!url) {
+                    status.textContent = '⚠️ URL belum diset. Klik ⚙️ Atur URL dulu.';
+                    status.style.color = 'var(--neon-pink)';
+                    return;
+                }
+                status.textContent = '🔌 Menguji koneksi ke Apps Script...';
+                status.style.color = '#facc15';
+                const result = await testSyncConnection();
+                if (result.ok) {
+                    status.textContent = '✅ ' + result.message;
+                    status.style.color = 'var(--neon-green)';
+                } else {
+                    status.textContent = '❌ Koneksi gagal: ' + (result.reason || 'Unknown error') + '. Pastikan Apps Script di-deploy sebagai "Anyone" dan URL benar.';
+                    status.style.color = 'var(--neon-pink)';
+                }
+            });
+
+            // ============ SHOW APPS SCRIPT CODE MODAL ============
+            const APPS_SCRIPT_CODE = [
+                '/**',
+                ' * Kampung Jawa Warrior - Google Apps Script Backend',
+                ' * Pastikan di-deploy sebagai Web app dengan akses "Anyone".',
+                ' */',
+                '',
+                'function doGet(e) {',
+                '  return handleRequest(e.parameter || {});',
+                '}',
+                '',
+                'function doPost(e) {',
+                '  var data = {};',
+                '  try {',
+                '    if (e.postData && e.postData.contents) {',
+                '      data = JSON.parse(e.postData.contents);',
+                '    }',
+                '  } catch (err) {',
+                '    data = e.parameter || {};',
+                '  }',
+                '  return handleRequest(data);',
+                '}',
+                '',
+                'function handleRequest(data) {',
+                '  try {',
+                '    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();',
+                '    if (sheet.getLastRow() === 0) {',
+                '      sheet.appendRow([\'Timestamp\', \'User\', \'Game\', \'Score\', \'Time\', \'Source\']);',
+                '      sheet.getRange(\'A1:F1\').setFontWeight(\'bold\');',
+                '      sheet.setFrozenRows(1);',
+                '    }',
+                '    sheet.appendRow([',
+                '      new Date(),',
+                '      data.user    || \'Unknown\',',
+                '      data.game    || \'Unknown\',',
+                '      data.score !== undefined ? data.score : \'\',',
+                '      data.timeStr || \'\',',
+                '      data.source  || \'game\'',
+                '    ]);',
+                '    return ContentService',
+                '      .createTextOutput(JSON.stringify({status: \'success\', message: \'Row appended\'}))',
+                '      .setMimeType(ContentService.MimeType.JSON);',
+                '  } catch (err) {',
+                '    return ContentService',
+                '      .createTextOutput(JSON.stringify({status: \'error\', message: err.toString()}))',
+                '      .setMimeType(ContentService.MimeType.JSON);',
+                '  }',
+                '}',
+                '',
+                'function setup() {',
+                '  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();',
+                '  if (sheet.getLastRow() === 0) {',
+                '    sheet.appendRow([\'Timestamp\', \'User\', \'Game\', \'Score\', \'Time\', \'Source\']);',
+                '    sheet.getRange(\'A1:F1\').setFontWeight(\'bold\');',
+                '    sheet.setFrozenRows(1);',
+                '  }',
+                '  Logger.log(\'Setup selesai.\');',
+                '}'
+            ].join('\\n');
+
+            $('btn-show-script-code').addEventListener('click', () => {
+                $('script-code-textarea').value = APPS_SCRIPT_CODE;
+                $('script-code-modal').classList.add('active');
+            });
+            $('btn-close-script-code').addEventListener('click', () => {
+                $('script-code-modal').classList.remove('active');
+            });
+            $('btn-copy-script-code').addEventListener('click', async () => {
+                const code = $('script-code-textarea').value;
+                try {
+                    await navigator.clipboard.writeText(code);
+                    alert('✅ Kode berhasil disalin ke clipboard!');
+                } catch (err) {
+                    // Fallback: select the textarea so user can manually copy
+                    $('script-code-textarea').select();
+                    alert('⚠️ Clipboard tidak tersedia. Kode sudah dipilih — tekan Ctrl+C (atau Cmd+C) untuk menyalin.');
+                }
+            });
+
+            // Initialize sync status on dashboard load
+            updateSyncStatus();
 
             // ============ INIT ============
             showScreen('login-screen');
