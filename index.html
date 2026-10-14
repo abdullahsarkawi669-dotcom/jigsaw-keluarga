@@ -4,6 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Kampung Jawa Warrior</title>
+
+    <!-- ============ PWA & OFFLINE META ============ -->
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#050510">
+    <meta name="description" content="Portal Para Pahlawan Kampung - mini game edukatif dengan simpan skor offline & sinkronisasi otomatis ke Google Sheets.">
+    <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+    <link rel="apple-touch-icon" href="./apple-touch-icon-180.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="KJ Warrior">
+    <meta name="application-name" content="Kampung Jawa Warrior">
+    <meta name="color-scheme" content="dark">
+
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
     <style>
         /* ================= BASE & FUTURISTIC THEME ================= */
@@ -103,6 +118,82 @@
         .modal-content { background: var(--glass-bg); backdrop-filter: blur(15px); border: 1px solid var(--glass-border); padding: 30px; border-radius: 15px; text-align: center; box-shadow: 0 0 30px rgba(0,243,255,0.3); width: 90%; max-width: 350px; }
         .pop-out { animation: popOut 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         @keyframes popOut { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        /* ================= PWA / OFFLINE UI ================= */
+        .pwa-install-banner {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            background: linear-gradient(45deg, rgba(0, 243, 255, 0.15), rgba(0, 136, 255, 0.1));
+            border: 1px solid var(--neon-blue);
+            border-radius: 10px;
+            padding: 10px 14px;
+            margin-bottom: 12px;
+            font-size: 0.85rem;
+            color: #d1faff;
+            box-shadow: 0 0 12px rgba(0, 243, 255, 0.25);
+        }
+        .pwa-install-banner.show { display: flex; }
+        .pwa-install-banner .install-btn {
+            background: linear-gradient(45deg, var(--neon-blue), #0088ff);
+            color: #000;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 0.8rem;
+            border: none;
+            cursor: pointer;
+            white-space: nowrap;
+            box-shadow: 0 0 8px rgba(0, 243, 255, 0.5);
+        }
+        .pwa-install-banner .close-x {
+            background: transparent;
+            color: #888;
+            border: none;
+            font-size: 1.1rem;
+            cursor: pointer;
+            padding: 0 4px;
+        }
+        .pwa-install-banner .close-x:hover { color: #fff; }
+
+        .connection-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            border: 1px solid;
+            transition: all 0.3s;
+        }
+        .connection-indicator.online {
+            background: rgba(0, 255, 102, 0.12);
+            border-color: var(--neon-green);
+            color: var(--neon-green);
+        }
+        .connection-indicator.offline {
+            background: rgba(255, 0, 85, 0.12);
+            border-color: var(--neon-pink);
+            color: var(--neon-pink);
+        }
+        .connection-indicator.syncing {
+            background: rgba(250, 204, 21, 0.12);
+            border-color: #facc15;
+            color: #facc15;
+        }
+        .connection-indicator .dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: currentColor;
+            box-shadow: 0 0 6px currentColor;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
     </style>
 </head>
 <body>
@@ -134,6 +225,19 @@
     <div id="dashboard-screen" class="screen">
         <div class="glass-card" style="max-width: 600px; width: 95%;">
             <h2>Halo, <span id="display-name" style="color: #fff;"></span>! 👋</h2>
+
+            <!-- PWA Install banner (shown only when beforeinstallprompt fires) -->
+            <div id="pwa-install-banner" class="pwa-install-banner">
+                <span>📲 <strong>Pasang Aplikasi</strong> &mdash; main offline, langsung dari Home Screen!</span>
+                <button id="btn-pwa-install" class="install-btn">Pasang</button>
+                <button id="btn-pwa-dismiss" class="close-x" aria-label="Tutup">&times;</button>
+            </div>
+
+            <!-- Online / Offline / Syncing indicator -->
+            <div id="connection-indicator" class="connection-indicator offline">
+                <span class="dot"></span>
+                <span id="connection-text">Memeriksa koneksi…</span>
+            </div>
 
             <button id="btn-sync" class="btn-primary" style="background: linear-gradient(to right, #10b981, #059669); margin-bottom: 10px; box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);">🔄 Sinkronisasi ke Google Sheets</button>
             <p id="sync-status" class="help-text" style="text-align: center; color: #facc15;">Belum dikonfigurasi — klik tombol di bawah untuk setup URL Apps Script</p>
@@ -3282,6 +3386,8 @@ draw();
                 currentUser = username;
                 const displayName = usernameMap[username] || username;
                 $('display-name').textContent = displayName;
+                // Save last user so the ?go=dashboard shortcut can auto-login.
+                try { localStorage.setItem('kjw_lastUser', username); } catch (e) {}
                 loadLeaderboard();
                 showScreen('dashboard-screen');
             }
@@ -3904,6 +4010,197 @@ draw();
 
             // Initialize sync status on dashboard load
             updateSyncStatus();
+
+            // ============ PWA: SERVICE WORKER REGISTRATION ============
+            // Registers sw.js so the app shell caches and the game runs fully
+            // offline. Also listens for SW updates and activates them
+            // immediately (so the user always gets the newest cached version
+            // on next navigation).
+            (function registerServiceWorker() {
+                if (!('serviceWorker' in navigator)) return;
+                // Only register when served over http/https (NOT file://).
+                // PWA install + offline cache require a real origin.
+                if (location.protocol !== 'http:' && location.protocol !== 'https:') {
+                    console.warn('[KJW] Service Worker dilewati: protokol ' + location.protocol + ' (butuh http/https).');
+                    return;
+                }
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('./sw.js')
+                        .then(reg => {
+                            console.log('[KJW] Service Worker terdaftar:', reg.scope);
+                            // Listen for new SW versions.
+                            reg.addEventListener('updatefound', () => {
+                                const newWorker = reg.installing;
+                                if (!newWorker) return;
+                                newWorker.addEventListener('statechange', () => {
+                                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                        // New version ready — take over immediately.
+                                        newWorker.postMessage('SKIP_WAITING');
+                                        console.log('[KJW] Versi baru Service Worker siap. Reload otomatis pada navigasi berikutnya.');
+                                    }
+                                });
+                            });
+                            // If controller changed (after skipWaiting), reload once.
+                            let refreshing = false;
+                            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                                if (refreshing) return;
+                                refreshing = true;
+                                location.reload();
+                            });
+                        })
+                        .catch(err => {
+                            console.warn('[KJW] Gagal daftar Service Worker:', err.message);
+                        });
+                });
+            })();
+
+            // ============ PWA: INSTALL PROMPT (beforeinstallprompt) ============
+            // Capture the native install prompt so we can show our own banner
+            // with a "Pasang" button. The banner appears only on browsers
+            // that fire beforeinstallprompt (Chrome, Edge, etc.) — on iOS
+            // Safari the user must use the Share → Add to Home Screen menu.
+            let deferredInstallPrompt = null;
+            const installBanner = $('pwa-install-banner');
+            const installBtn = $('btn-pwa-install');
+            const installDismissBtn = $('btn-pwa-dismiss');
+
+            window.addEventListener('beforeinstallprompt', (e) => {
+                // Prevent the default mini-infobar (Chrome Android).
+                e.preventDefault();
+                deferredInstallPrompt = e;
+                installBanner.classList.add('show');
+                console.log('[KJW] beforeinstallprompt fired — banner install ditampilkan.');
+            });
+
+            installBtn.addEventListener('click', async () => {
+                if (!deferredInstallPrompt) {
+                    alert('📲 Untuk memasang aplikasi:\n\n• Android Chrome: pilih menu ⋮ → "Add to Home screen"\n• iOS Safari: tekan tombol Share → "Add to Home Screen"\n• Desktop Chrome/Edge: klik icon install di address bar');
+                    return;
+                }
+                deferredInstallPrompt.prompt();
+                const choice = await deferredInstallPrompt.userChoice;
+                console.log('[KJW] Install choice:', choice.outcome);
+                deferredInstallPrompt = null;
+                installBanner.classList.remove('show');
+            });
+            installDismissBtn.addEventListener('click', () => {
+                installBanner.classList.remove('show');
+                // Remember dismissal so it doesn't reappear every session.
+                try { sessionStorage.setItem('kjw_install_dismissed', '1'); } catch (e) {}
+            });
+            // Respect prior dismissal in this session.
+            try {
+                if (sessionStorage.getItem('kjw_install_dismissed') === '1') {
+                    installBanner.style.display = 'none';
+                }
+            } catch (e) {}
+
+            window.addEventListener('appinstalled', () => {
+                installBanner.classList.remove('show');
+                console.log('[KJW] App terinstall! 🎉');
+                // Optionally clear dismissed flag.
+                try { sessionStorage.removeItem('kjw_install_dismissed'); } catch (e) {}
+            });
+
+            // ============ ONLINE / OFFLINE INDICATOR + AUTO-RESYNC ============
+            // Three goals:
+            //   1. Reflect current connectivity state in the UI (online/offline/syncing).
+            //   2. Whenever the device goes from offline -> online, automatically
+            //      retry syncing all locally-stored scores that are still unsynced
+            //      (i.e. scores saved while offline).
+            //   3. Also attempt a resync on app startup, in case the user played
+            //      offline, closed the app, then reopened it while online.
+            const connIndicator = $('connection-indicator');
+            const connText = $('connection-text');
+            const SCORES_KEY = 'kampungJawaWarrior_scores';
+
+            function setConnectionState(state, text) {
+                connIndicator.classList.remove('online', 'offline', 'syncing');
+                connIndicator.classList.add(state); // 'online' | 'offline' | 'syncing'
+                connText.textContent = text;
+            }
+
+            function isOnline() {
+                return (typeof navigator.onLine === 'boolean') ? navigator.onLine : true;
+            }
+
+            function refreshConnectionUI() {
+                if (isOnline()) {
+                    setConnectionState('online', 'Online — siap sync');
+                } else {
+                    setConnectionState('offline', 'Offline — skor disimpan lokal, akan sync otomatis saat online');
+                }
+            }
+
+            /**
+             * Auto-resync: iterate over all locally-stored scores that have
+             * not yet been synced (synced !== true), try to push each one
+             * to Google Sheets, and update its `synced`/`verified` flags.
+             * Safe to call repeatedly — already-synced entries are skipped.
+             */
+            async function autoResyncPendingScores() {
+                if (!isOnline()) return;
+                const url = getScriptUrl();
+                if (!url) return; // No URL configured yet — nothing to do.
+                let scores = [];
+                try { scores = JSON.parse(localStorage.getItem(SCORES_KEY) || '[]'); } catch (e) { return; }
+                const pending = scores.filter(s => !s.synced);
+                if (pending.length === 0) {
+                    refreshConnectionUI();
+                    return;
+                }
+                setConnectionState('syncing', `Menyinkronkan ${pending.length} skor offline…`);
+                let okCount = 0;
+                for (const entry of pending) {
+                    const result = await syncToGoogleSheets(entry);
+                    if (result.synced) {
+                        entry.synced = true;
+                        if (result.verified) entry.verified = true;
+                        okCount++;
+                    }
+                    // Small delay between requests to be gentle on Apps Script quota.
+                    await new Promise(r => setTimeout(r, 200));
+                }
+                localStorage.setItem(SCORES_KEY, JSON.stringify(scores));
+                loadLeaderboard();
+                updateSyncStatus();
+                refreshConnectionUI();
+                console.log(`[KJW] Auto-resync selesai. ${okCount}/${pending.length} skor berhasil terkirim.`);
+            }
+
+            window.addEventListener('online', () => {
+                console.log('[KJW] Koneksi kembali online. Auto-resync dimulai…');
+                refreshConnectionUI();
+                // Small delay so navigator.onLine + fetch stack are ready.
+                setTimeout(autoResyncPendingScores, 500);
+            });
+            window.addEventListener('offline', () => {
+                console.log('[KJW] Koneksi terputus. Skor akan disimpan lokal & disync nanti.');
+                refreshConnectionUI();
+            });
+            // Refresh UI on startup.
+            refreshConnectionUI();
+            // Attempt startup resync (handles: played offline, closed, reopened online).
+            setTimeout(autoResyncPendingScores, 1500);
+
+            // ============ DEEP LINK: ?go=dashboard (manifest shortcut) ============
+            // The PWA manifest declares a shortcut "Mulai Misi" that links to
+            // ?go=dashboard. If the user opens the app via that shortcut AND
+            // has a saved login session, jump straight to the dashboard.
+            try {
+                const params = new URLSearchParams(location.search);
+                if (params.get('go') === 'dashboard') {
+                    const lastUser = localStorage.getItem('kjw_lastUser');
+                    if (lastUser) {
+                        const sel = $('username');
+                        if (sel && [...sel.options].some(o => o.value === lastUser)) {
+                            sel.value = lastUser;
+                            // Defer until after init so handler is attached.
+                            setTimeout(() => { try { handleLogin(); } catch (e) {} }, 0);
+                        }
+                    }
+                }
+            } catch (e) {}
 
             // ============ INIT ============
             showScreen('login-screen');

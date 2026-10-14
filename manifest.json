@@ -1,0 +1,53 @@
+{
+  "name": "Kampung Jawa Warrior",
+  "short_name": "KJ Warrior",
+  "description": "Portal Para Pahlawan Kampung - Kumpulan mini game edukatif (Teka-Teki, Menara Tinggi, Panah Sakti, Perisai Tank, Pemanah Bintang) dengan simpan skor offline & sinkronisasi ke Google Sheets.",
+  "lang": "id",
+  "dir": "ltr",
+  "start_url": "./kampung-jawa-warrior.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "fullscreen", "minimal-ui"],
+  "orientation": "any",
+  "theme_color": "#050510",
+  "background_color": "#050510",
+  "categories": ["games", "education", "entertainment"],
+  "icons": [
+    {
+      "src": "favicon-32.png",
+      "sizes": "32x32",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Mulai Misi",
+      "short_name": "Main",
+      "description": "Langsung ke dashboard pilih misi",
+      "url": "./kampung-jawa-warrior.html?go=dashboard"
+    }
+  ],
+  "screenshots": [],
+  "edge_side_panel": {
+    "preferred_width": 420
+  }
+}
