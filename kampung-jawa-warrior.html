@@ -240,8 +240,8 @@
             </div>
 
             <button id="btn-sync" class="btn-primary" style="background: linear-gradient(to right, #10b981, #059669); margin-bottom: 10px; box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);">🔄 Sinkronisasi ke Google Sheets</button>
-            <p id="sync-status" class="help-text" style="text-align: center; color: #facc15;">Belum dikonfigurasi — klik tombol di bawah untuk setup URL Apps Script</p>
-            <div style="display: flex; gap: 8px; margin-bottom: 15px;">
+            <p id="sync-status" class="help-text" style="text-align: center; color: #facc15; display: none;">Belum dikonfigurasi — klik tombol di bawah untuk setup URL Apps Script</p>
+            <div id="settings-row" style="display: none; gap: 8px; margin-bottom: 15px;">
                 <button id="btn-sync-settings" class="btn-secondary" style="margin: 0; padding: 8px 12px; font-size: 0.8rem; flex: 1;">⚙️ Atur URL</button>
                 <button id="btn-test-connection" class="btn-secondary" style="margin: 0; padding: 8px 12px; font-size: 0.8rem; flex: 1; border-color: var(--neon-blue); color: var(--neon-blue); box-shadow: inset 0 0 10px rgba(0, 243, 255, 0.2);">🔌 Test Koneksi</button>
                 <button id="btn-show-script-code" class="btn-secondary" style="margin: 0; padding: 8px 12px; font-size: 0.8rem; flex: 1; border-color: var(--neon-gold); color: var(--neon-gold); box-shadow: inset 0 0 10px rgba(255, 215, 0, 0.2);">📋 Lihat Kode</button>
@@ -255,6 +255,7 @@
                     <button id="btn-mode-star" class="btn-mode">🎯 Panah Sakti</button>
                     <button id="btn-mode-tank" class="btn-mode">🛡️ Perisai Tank</button>
                     <button id="btn-mode-arrow" class="btn-mode">🏹 Pemanah Bintang</button>
+                    <button id="btn-mode-memory" class="btn-mode">🃏 Memory Spark</button>
                 </div>
             </div>
 
@@ -3344,6 +3345,578 @@ draw();
 </body>
 </html>
     </script>
+    <!-- MEMORY: Memory Spark -->
+    <script type="text/plain" id="html-memory">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Memory Card - Spark</title>
+    <script src="https://cdn.tailwindcss.com"><\/script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap');
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #0f172a;
+            color: #f8fafc;
+            font-family: 'Poppins', sans-serif;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Shake Animation */
+        @keyframes shake {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(-4px, 4px) rotate(-1deg); }
+            50% { transform: translate(4px, -2px) rotate(1deg); }
+            75% { transform: translate(-4px, -4px) rotate(-1deg); }
+            100% { transform: translate(0, 0) rotate(0deg); }
+        }
+        .shake {
+            animation: shake 0.3s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        #grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            padding: 15px;
+            max-width: 800px;
+            width: 100%;
+            aspect-ratio: 4 / 5;
+            max-height: 70vh;
+            perspective: 1000px;
+            z-index: 2;
+        }
+
+        @media (min-width: 768px) {
+            #grid {
+                grid-template-columns: repeat(5, 1fr);
+                gap: 15px;
+                aspect-ratio: 5 / 4;
+            }
+        }
+
+        .card {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            transform-style: preserve-3d;
+            transition: transform 0.5s cubic-bezier(0.4, 0.2, 0.2, 1);
+        }
+
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card.matched {
+            transform: rotateY(180deg) scale(0.95);
+            opacity: 0.8;
+            pointer-events: none;
+        }
+
+        @keyframes wobble {
+            0%, 100% { transform: rotateY(180deg) translateX(0); }
+            25% { transform: rotateY(180deg) translateX(-5px); }
+            75% { transform: rotateY(180deg) translateX(5px); }
+        }
+
+        .card.mismatched {
+            animation: wobble 0.4s ease-in-out;
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: bold;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            overflow: hidden;
+        }
+
+        .card-front {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: transparent;
+            transform: rotateY(0deg);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .card-front::after {
+            content: '?';
+            color: rgba(255,255,255,0.5);
+            font-size: 2.5rem;
+        }
+
+        .card-front:hover {
+            box-shadow: 0 0 15px rgba(139, 92, 246, 0.5);
+        }
+
+        .card-back {
+            background: #1e293b;
+            transform: rotateY(180deg);
+            border: 2px solid #38bdf8;
+            position: relative;
+        }
+
+        .card-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 2;
+        }
+        
+        .card-fallback {
+            position: absolute;
+            z-index: 1;
+            font-size: 2.5rem;
+            color: #38bdf8;
+        }
+
+        .ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(8px);
+        }
+
+        .hidden { display: none !important; }
+        
+        #hud {
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 20px;
+            z-index: 5;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        #particles-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 4;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #0ea5e9, #3b82f6);
+            color: white;
+            padding: 12px 32px;
+            border-radius: 9999px;
+            font-size: 1.25rem;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(14, 165, 233, 0.4);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(14, 165, 233, 0.6);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="particles-canvas"></canvas>
+
+    <div id="game-container">
+        <div id="hud" class="hidden">
+            <div><span class="text-gray-400">Time:</span> <span id="time-display" class="text-sky-400">0s</span></div>
+            <div><span class="text-gray-400">Moves:</span> <span id="moves-display" class="text-sky-400">0</span></div>
+            <button id="pause-btn" class="text-gray-400 hover:text-white transition">⏸️ Pause</button>
+        </div>
+
+        <div id="grid" class="hidden"></div>
+    </div>
+
+    <!-- Start Screen -->
+    <div id="start-screen" class="ui-layer">
+        <h1 class="text-5xl md:text-7xl font-extrabold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-indigo-500 text-center drop-shadow-lg">MEMORY<br>SPARK</h1>
+        <p class="text-gray-300 mb-8 text-center max-w-sm">Match all pairs as fast as possible. Less moves = higher score.</p>
+        <button id="start-btn" class="btn">PLAY NOW</button>
+    </div>
+
+    <!-- Pause Screen -->
+    <div id="pause-screen" class="ui-layer hidden">
+        <h2 class="text-5xl font-bold mb-8 text-white tracking-widest">PAUSED</h2>
+        <button id="resume-btn" class="btn mb-4">RESUME</button>
+        <button id="restart-btn-pause" class="text-gray-400 hover:text-white underline mt-4">Restart Game</button>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="game-over-screen" class="ui-layer hidden">
+        <h2 class="text-5xl font-bold mb-4 text-green-400 drop-shadow-[0_0_15px_rgba(74,222,128,0.5)]">COMPLETE!</h2>
+        
+        <div class="bg-slate-800/80 p-6 rounded-2xl border border-slate-700 text-center mb-8 w-64">
+            <div class="mb-4">
+                <p class="text-gray-400 text-sm">Time</p>
+                <p id="final-time" class="text-2xl font-bold text-white">0s</p>
+            </div>
+            <div class="mb-4">
+                <p class="text-gray-400 text-sm">Moves</p>
+                <p id="final-moves" class="text-2xl font-bold text-white">0</p>
+            </div>
+            <div>
+                <p class="text-gray-400 text-sm">Score</p>
+                <p id="final-score" class="text-3xl font-extrabold text-sky-400">0</p>
+            </div>
+        </div>
+
+        <div class="mb-6 w-64">
+            <h3 class="text-lg text-gray-300 border-b border-slate-700 pb-1 mb-2 text-center">Top Scores</h3>
+            <ol id="high-score-list" class="text-sm text-gray-400 space-y-1 list-decimal pl-5"></ol>
+        </div>
+
+        <button id="restart-btn" class="btn">PLAY AGAIN</button>
+    </div>
+
+    <script>
+        // Configuration
+        const totalPairs = 10; // 20 cards total (5x4 grid on desktop)
+        const imageFilenames = [
+            'gambar(1).png', 'gambar(2).png', 'gambar(3).png', 'gambar(4).png', 
+            'gambar(5).png', 'gambar(6).png', 'gambar(7).png', 'gambar(8).png', 
+            'gambar(9).png', 'gambar(10).png', 'gambar(11).png', 'gambar(12).png',
+            'gambar(13).png', 'gambar(14).png', 'gambar(15).png', 'gambar(16).png',
+            'gambar(17).png', 'gambar(18).png', 'gambar(19).png', 'gambar(20).png'
+        ];
+        
+        // Emojis as fallback visually if image fails to load
+        const fallbackIcons = ['🌟','🔥','💎','🚀','⚡','🌙','🍀','🌸','🍎','🎨', '🧩','🎭','🎸','🎲','🎮','🏆','🛸','🌋','🌈','🍒'];
+
+        // DOM Elements
+        const grid = document.getElementById('grid');
+        const hud = document.getElementById('hud');
+        const startScreen = document.getElementById('start-screen');
+        const pauseScreen = document.getElementById('pause-screen');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const timeDisplay = document.getElementById('time-display');
+        const movesDisplay = document.getElementById('moves-display');
+        const gameContainer = document.getElementById('game-container');
+        const canvas = document.getElementById('particles-canvas');
+        const ctx = canvas.getContext('2d');
+
+        // State
+        let cards = [];
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let moves = 0;
+        let timer = 0;
+        let timerInterval = null;
+        let gameState = 'START'; // START, PLAYING, PAUSED, OVER
+        let lockBoard = false;
+
+        function initGame() {
+            grid.innerHTML = '';
+            cards = [];
+            flippedCards = [];
+            matchedPairs = 0;
+            moves = 0;
+            timer = 0;
+            lockBoard = false;
+            updateHUD();
+
+            // Select 10 images from the pool
+            let selectedImages = imageFilenames.slice(0, totalPairs);
+            
+            // Create pairs
+            let deck = [...selectedImages, ...selectedImages];
+            deck = deck.sort(() => Math.random() - 0.5); // Shuffle
+
+            // Generate DOM nodes
+            deck.forEach((imgSrc, index) => {
+                const originalIndex = imageFilenames.indexOf(imgSrc);
+                const fallback = fallbackIcons[originalIndex % fallbackIcons.length];
+
+                const card = document.createElement('div');
+                card.classList.add('card');
+                card.dataset.id = imgSrc;
+                card.dataset.index = index;
+
+                card.innerHTML = `
+                    <div class="card-face card-front"></div>
+                    <div class="card-face card-back">
+                        <div class="card-fallback">${fallback}</div>
+                        <img src="${imgSrc}" class="card-img" alt="Card" onerror="this.style.display='none'">
+                    </div>
+                `;
+
+                card.addEventListener('click', () => flipCard(card));
+                grid.appendChild(card);
+                cards.push(card);
+            });
+        }
+
+        function flipCard(card) {
+            if (lockBoard || card === flippedCards[0] || card.classList.contains('matched')) return;
+            if (gameState !== 'PLAYING') return;
+
+            card.classList.add('flipped');
+            flippedCards.push(card);
+
+            if (flippedCards.length === 2) {
+                moves++;
+                updateHUD();
+                checkForMatch();
+            }
+        }
+
+        function checkForMatch() {
+            const [card1, card2] = flippedCards;
+            const isMatch = card1.dataset.id === card2.dataset.id;
+
+            if (isMatch) {
+                handleMatch(card1, card2);
+            } else {
+                handleMismatch(card1, card2);
+            }
+        }
+
+        function handleMatch(card1, card2) {
+            lockBoard = true;
+            matchedPairs++;
+            
+            // Juicy feedback
+            setTimeout(() => {
+                card1.classList.add('matched');
+                card2.classList.add('matched');
+                
+                const rect1 = card1.getBoundingClientRect();
+                const rect2 = card2.getBoundingClientRect();
+                
+                triggerParticles(rect1.left + rect1.width/2, rect1.top + rect1.height/2);
+                triggerParticles(rect2.left + rect2.width/2, rect2.top + rect2.height/2);
+                
+                triggerShake();
+                flippedCards = [];
+                lockBoard = false;
+
+                if (matchedPairs === totalPairs) {
+                    endGame();
+                }
+            }, 400);
+        }
+
+        function handleMismatch(card1, card2) {
+            lockBoard = true;
+            setTimeout(() => {
+                card1.classList.add('mismatched');
+                card2.classList.add('mismatched');
+                
+                setTimeout(() => {
+                    card1.classList.remove('flipped', 'mismatched');
+                    card2.classList.remove('flipped', 'mismatched');
+                    flippedCards = [];
+                    lockBoard = false;
+                }, 400);
+            }, 600);
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                if (gameState === 'PLAYING') {
+                    timer++;
+                    updateHUD();
+                }
+            }, 1000);
+        }
+
+        function updateHUD() {
+            timeDisplay.textContent = `${timer}s`;
+            movesDisplay.textContent = moves;
+        }
+
+        function startGame() {
+            initGame();
+            gameState = 'PLAYING';
+            startScreen.classList.add('hidden');
+            gameOverScreen.classList.add('hidden');
+            pauseScreen.classList.add('hidden');
+            hud.classList.remove('hidden');
+            grid.classList.remove('hidden');
+            startTimer();
+        }
+
+        function pauseGame() {
+            if (gameState === 'PLAYING') {
+                gameState = 'PAUSED';
+                pauseScreen.classList.remove('hidden');
+            }
+        }
+
+        function resumeGame() {
+            if (gameState === 'PAUSED') {
+                gameState = 'PLAYING';
+                pauseScreen.classList.add('hidden');
+            }
+        }
+
+        function endGame() {
+            gameState = 'OVER';
+            clearInterval(timerInterval);
+            
+            setTimeout(() => {
+                grid.classList.add('hidden');
+                hud.classList.add('hidden');
+                gameOverScreen.classList.remove('hidden');
+                
+                const score = Math.max(0, 10000 - (timer * 20) - (moves * 50));
+                
+                document.getElementById('final-time').textContent = `${timer}s`;
+                document.getElementById('final-moves').textContent = moves;
+                document.getElementById('final-score').textContent = score;
+                
+                saveHighScore(score);
+                
+                // Send score to parent (Kampung Jawa Warrior leaderboard)
+                try { window.parent.postMessage({type:'saveScore', game:'Memory Spark', score: score}, '*'); } catch(e) {}
+                
+                // End game explosion
+                for(let i=0; i<5; i++){
+                    setTimeout(() => triggerParticles(Math.random()*window.innerWidth, Math.random()*window.innerHeight, 50), i*200);
+                }
+            }, 1000);
+        }
+
+        function saveHighScore(score) {
+            let scores = [];
+            try { scores = JSON.parse(localStorage.getItem('memorySparkScores') || '[]'); } catch(e) {}
+            scores.push(score);
+            scores.sort((a, b) => b - a);
+            scores = scores.slice(0, 5);
+            try { localStorage.setItem('memorySparkScores', JSON.stringify(scores)); } catch(e) {}
+            
+            const list = document.getElementById('high-score-list');
+            if (list) {
+                list.innerHTML = scores.map((s, i) => `
+                    <li class="${s === score ? 'text-sky-400 font-bold' : ''}">${s} pts</li>
+                `).join('');
+            }
+        }
+
+        function triggerShake() {
+            gameContainer.classList.remove('shake');
+            void gameContainer.offsetWidth; // trigger reflow
+            gameContainer.classList.add('shake');
+        }
+
+        // Particle System
+        let particles = [];
+        
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                const angle = Math.random() * Math.PI * 2;
+                const velocity = Math.random() * 5 + 2;
+                this.vx = Math.cos(angle) * velocity;
+                this.vy = Math.sin(angle) * velocity;
+                this.life = 1.0;
+                this.decay = Math.random() * 0.02 + 0.02;
+                this.color = `hsl(${Math.random() * 60 + 190}, 100%, 60%)`; // Blue/Cyan hues
+                this.size = Math.random() * 4 + 2;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life -= this.decay;
+            }
+            draw(ctx) {
+                ctx.globalAlpha = this.life;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI*2);
+                ctx.fill();
+            }
+        }
+
+        function triggerParticles(x, y, count = 20) {
+            for(let i=0; i<count; i++) {
+                particles.push(new Particle(x, y));
+            }
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for(let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.update();
+                p.draw(ctx);
+                if(p.life <= 0) particles.splice(i, 1);
+            }
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+
+        document.getElementById('start-btn').addEventListener('click', startGame);
+        document.getElementById('pause-btn').addEventListener('click', pauseGame);
+        document.getElementById('resume-btn').addEventListener('click', resumeGame);
+        document.getElementById('restart-btn').addEventListener('click', startGame);
+        document.getElementById('restart-btn-pause').addEventListener('click', startGame);
+        
+        // Keyboard Support
+        window.addEventListener('keydown', (e) => {
+            if(e.key === 'Escape' || e.key === 'p') {
+                if(gameState === 'PLAYING') pauseGame();
+                else if(gameState === 'PAUSED') resumeGame();
+            }
+        });
+    <\/script>
+</body>
+</html>
+    </script>
+
     <!-- ========================================================================= -->
     <!-- MAIN APP SCRIPT - Handles login, dashboard, jigsaw, iframe games, scores -->
     <!-- ========================================================================= -->
@@ -3408,7 +3981,8 @@ draw();
                 'tower': $('btn-mode-tower'),
                 'star': $('btn-mode-star'),
                 'tank': $('btn-mode-tank'),
-                'arrow': $('btn-mode-arrow')
+                'arrow': $('btn-mode-arrow'),
+                'memory': $('btn-mode-memory')
             };
             function setMode(mode) {
                 currentMode = mode;
@@ -3425,7 +3999,8 @@ draw();
                     'tower': '🏢 MULAI MENARA TINGGI',
                     'star': '🎯 MULAI PANAH SAKTI',
                     'tank': '🛡️ MULAI PERISAI TANK',
-                    'arrow': '🏹 MULAI PEMANAH BINTANG'
+                    'arrow': '🏹 MULAI PEMANAH BINTANG',
+                    'memory': '🃏 MULAI MEMORY SPARK'
                 };
                 startBtn.textContent = labels[mode] || '🚀 INISIASI MISI';
             }
@@ -3586,7 +4161,8 @@ draw();
                     'tower': 'html-tower',
                     'star': 'html-star',
                     'tank': 'html-tank',
-                    'arrow': 'html-arrow'
+                    'arrow': 'html-arrow',
+                    'memory': 'html-memory'
                 };
                 const scriptEl = $(htmlMap[mode]);
                 if (!scriptEl) {
